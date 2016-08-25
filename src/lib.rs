@@ -19,3 +19,7 @@
 //!
 //! NDFA is a library for working with deterministic and non-deterministic finite-state automata.
 //!
+
+pub use self::state_machine::*;
+
+pub mod state_machine;
