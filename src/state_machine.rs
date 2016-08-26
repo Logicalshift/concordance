@@ -14,8 +14,6 @@
 //   limitations under the License.
 //
 
-use std::rc::*;
-
 //!
 //! # State machine
 //!
@@ -25,6 +23,8 @@ use std::rc::*;
 //! State machines in this library can optionally attach output symbols to states. A state with an output symbol is an 'accepting'
 //! state: it matches a substring of the output.
 //!
+
+use std::rc::*;
 
 ///
 /// Identifies a state in a state machine
@@ -67,6 +67,22 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
     /// Sets the output symbol to use for a particular state
     ///
     fn set_output_symbol(&mut self, state: StateId, new_output_symbol: OutputSymbol);
+
+    ///
+    /// Joins two states in this state machine
+    ///
+    /// This means that `first_state` will follow the transitions for `second_state` - that is, any transition that appears
+    /// in `second_state` will also appear in `first_state` - including transitions that are added after this call.
+    ///
+    /// The reverse is not true: `second_state` does not acquire the transitions from `first_state`.
+    ///
+    /// This could be considered as creating an empty or 'epsilon' transition between the first state and the second state,
+    /// which is useful for building NDFAs from regular languages.
+    ///
+    /// These semantics mean that callers don't have to treat empty transitions as special cases, and also ensure that state
+    /// 0 is always the sole start state for the automaton.
+    ///
+    fn join_states(&mut self, first_state: StateId, second_state: StateId);
 }
 
 ///

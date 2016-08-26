@@ -14,9 +14,6 @@
 //   limitations under the License.
 //
 
-use super::state_machine::*;
-use std::collections::HashMap;
-
 //!
 //! # NDFA
 //!
@@ -34,9 +31,13 @@ use std::collections::HashMap;
 //! An NDFA is created by calling the constructor:
 //!
 //! ```
-//! let mut ndfa: Ndfa<u32, u32>::new();
+//! # use ndfa::*;
+//! let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
 //! ```
 //!
+
+use super::state_machine::*;
+use std::collections::HashMap;
 
 ///
 /// Represents a non-deterministic finite-state automata
@@ -103,6 +104,10 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
         }
 
         self.output_symbols.insert(state, new_output_symbol);
+    }
+
+    fn join_states(&mut self, first_state: StateId, second_state: StateId) {
+        unimplemented!()
     }
 }
 
