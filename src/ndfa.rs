@@ -38,6 +38,7 @@
 
 use super::state_machine::*;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 ///
 /// Represents a non-deterministic finite-state automata
@@ -58,8 +59,45 @@ pub struct Ndfa<InputSymbol, OutputSymbol> where InputSymbol : Clone {
 }
 
 impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
+    ///
+    /// Creates a new non-deterministic finite Automaton
+    ///
+    /// The NDFA will initially just consist of the start state 0. The methods in `MutableStateMachine` should be called to
+    /// build it into a more useful structure.
+    ///
     pub fn new() -> Ndfa<InputSymbol, OutputSymbol> {
         Ndfa { max_state: 0, transitions: vec![], joined_with: vec![], output_symbols: HashMap::new() }
+    }
+
+    ///
+    /// Retrieves the complete set of states whose transitions should be returned due to joining for a given state
+    ///
+    #[inline]
+    fn get_join_closure(&self, state: StateId) -> HashSet<StateId> {
+        // The result is initially empty. We'll add the initial state in the first pass
+        let mut result: HashSet<StateId> = HashSet::new();
+
+        // Add in any joined states
+        let mut stack = vec![];
+        stack.push(state);
+
+        while let Some(next_state) = stack.pop() {
+            if !result.contains(&next_state) {
+                // Add to the result
+                result.insert(next_state);
+
+                // Process any states that are joined to this one
+                if (next_state as usize) < self.joined_with.len() {
+                    let ref join_states = self.joined_with[next_state as usize];
+
+                    for join_to in join_states {
+                        stack.push(*join_to);
+                    }
+                }
+            }
+        }
+
+        result
     }
 }
 
@@ -69,11 +107,19 @@ impl<InputSymbol : Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> 
     }
 
     fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
-        if (state as usize) >= self.transitions.len() {
-            vec![]
-        } else {
-            self.transitions[state as usize].clone()
-        }
+        let empty           = vec![];
+
+        // The transitions are all the transitions for this state, plus all the transitions in the states that are joined to it
+        let joined_states   = self.get_join_closure(state);
+        let merged          = joined_states.iter().flat_map(|join_state| {
+            if (*join_state as usize) < self.transitions.len() {
+                self.transitions[*join_state as usize].iter()
+            } else {
+                empty.iter()
+            }
+        });
+
+        merged.map(|item| item.clone()).collect()
     }
 
     fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
