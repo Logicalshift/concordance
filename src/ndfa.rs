@@ -50,13 +50,16 @@ pub struct Ndfa<InputSymbol, OutputSymbol> where InputSymbol : Clone {
     /// Transitions for each state
     transitions: Vec<Vec<(InputSymbol, StateId)>>,
 
+    /// The states that are joined with the state specified by the index
+    joined_with: Vec<Vec<StateId>>,
+
     /// Output symbols for each state
     output_symbols: HashMap<StateId, OutputSymbol>
 }
 
 impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
     pub fn new() -> Ndfa<InputSymbol, OutputSymbol> {
-        Ndfa { max_state: 0, transitions: vec![], output_symbols: HashMap::new() }
+        Ndfa { max_state: 0, transitions: vec![], joined_with: vec![], output_symbols: HashMap::new() }
     }
 }
 
@@ -107,7 +110,22 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
     }
 
     fn join_states(&mut self, first_state: StateId, second_state: StateId) {
-        unimplemented!()
+        // Joining states updates the overall state count_states
+        if first_state > self.max_state {
+            self.max_state = first_state;
+        }
+
+        if second_state > self.max_state {
+            self.max_state = second_state;
+        }
+
+        // Expand the join table so we can add the first state
+        while self.joined_with.len() <= first_state as usize {
+            self.joined_with.push(vec![]);
+        }
+
+        // Join the second state to the first state
+        self.joined_with[first_state as usize].push(second_state);
     }
 }
 
