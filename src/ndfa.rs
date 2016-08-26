@@ -185,4 +185,80 @@ mod tests {
         assert!(ndfa.output_symbol_for_state(0) == Some(&64));
         assert!(ndfa.output_symbol_for_state(1) == None);
     }
+
+    #[test]
+    fn join_states_attaches_transitions_to_first_state() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.add_transition(0, 42, 1);
+        ndfa.add_transition(1, 43, 2);
+        ndfa.join_states(0, 1);
+
+        assert!(ndfa.get_transitions_for_state(0).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(0).contains(&(43, 2)));
+    }
+
+    #[test]
+    fn adding_transition_after_join_updates_target() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.join_states(0, 1);
+        ndfa.add_transition(0, 42, 1);
+        ndfa.add_transition(1, 43, 2);
+
+        assert!(ndfa.get_transitions_for_state(0).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(0).contains(&(43, 2)));
+    }
+
+    #[test]
+    fn join_updates_state_count() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.join_states(0, 1);
+
+        assert!(ndfa.count_states() == 2);
+    }
+
+    #[test]
+    fn join_states_does_not_attach_to_second_state() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.add_transition(0, 42, 1);
+        ndfa.add_transition(1, 43, 2);
+        ndfa.join_states(0, 1);
+
+        assert!(!ndfa.get_transitions_for_state(1).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(1).contains(&(43, 2)));
+    }
+
+    #[test]
+    fn join_states_recurses_to_further_states() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.add_transition(0, 42, 1);
+        ndfa.add_transition(1, 43, 2);
+        ndfa.add_transition(2, 44, 3);
+        ndfa.join_states(0, 1);
+        ndfa.join_states(1, 2);
+
+        assert!(ndfa.get_transitions_for_state(0).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(0).contains(&(43, 2)));
+        assert!(ndfa.get_transitions_for_state(0).contains(&(44, 3)));
+    }
+
+    #[test]
+    fn join_loop_attaches_to_both_states() {
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.add_transition(0, 42, 1);
+        ndfa.add_transition(1, 43, 2);
+        ndfa.join_states(0, 1);
+        ndfa.join_states(1, 0);
+
+        assert!(ndfa.get_transitions_for_state(0).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(0).contains(&(43, 2)));
+
+        assert!(ndfa.get_transitions_for_state(1).contains(&(42, 1)));
+        assert!(ndfa.get_transitions_for_state(1).contains(&(43, 2)));
+    }
 }
