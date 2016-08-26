@@ -16,6 +16,16 @@
 
 use std::rc::*;
 
+//!
+//! # State machine
+//!
+//! The `StateMachine` trait is implemented by anything that represents a state machine (aka a finite state automaton). These
+//! consist of one or more states that are transitioned between upon matching a symbol from the input.
+//!
+//! State machines in this library can optionally attach output symbols to states. A state with an output symbol is an 'accepting'
+//! state: it matches a substring of the output.
+//!
+
 ///
 /// Identifies a state in a state machine
 ///
