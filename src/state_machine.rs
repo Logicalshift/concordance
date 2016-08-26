@@ -45,6 +45,21 @@ pub trait StateMachine<InputSymbol, OutputSymbol> {
 }
 
 ///
+/// Trait implemented by state machines that can be altered
+///
+pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSymbol, OutputSymbol> {
+    ///
+    /// Adds a transition from a particular state to another on seeing a symbol
+    ///
+    fn add_transition(&mut self, state: StateId, forSymbol: InputSymbol, newState: StateId);
+
+    ///
+    /// Sets the output symbol to use for a particular state
+    ///
+    fn set_output_symbol(&mut self, state: StateId, newOutputSymbol: OutputSymbol);
+}
+
+///
 /// Trait used to indicate that a particular state machine is deterministic (has at most one 
 /// transition per symbol from the original)
 ///
