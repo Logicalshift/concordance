@@ -41,7 +41,7 @@ pub trait StateMachine<InputSymbol, OutputSymbol> {
     ///
     /// If a state is an accepting state, then this returns the output symbol that should be produced if this is the longest match
     ///
-    fn output_symbol_for_state(&self, state: StateId) -> Option<OutputSymbol>;
+    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol>;
 }
 
 ///
@@ -51,12 +51,12 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
     ///
     /// Adds a transition from a particular state to another on seeing a symbol
     ///
-    fn add_transition(&mut self, state: StateId, forSymbol: InputSymbol, newState: StateId);
+    fn add_transition(&mut self, state: StateId, for_symbol: InputSymbol, new_state: StateId);
 
     ///
     /// Sets the output symbol to use for a particular state
     ///
-    fn set_output_symbol(&mut self, state: StateId, newOutputSymbol: OutputSymbol);
+    fn set_output_symbol(&mut self, state: StateId, new_output_symbol: OutputSymbol);
 }
 
 ///
@@ -80,7 +80,7 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<S
     }
 
     #[inline]
-    fn output_symbol_for_state(&self, state: StateId) -> Option<OutputSymbol> {
+    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
         (**self).output_symbol_for_state(state)
     }
 }
@@ -97,7 +97,7 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<D
     }
 
     #[inline]
-    fn output_symbol_for_state(&self, state: StateId) -> Option<OutputSymbol> {
+    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
         (**self).output_symbol_for_state(state)
     }
 }
