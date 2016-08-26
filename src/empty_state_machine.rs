@@ -19,6 +19,7 @@ use super::state_machine::*;
 ///
 /// Represents a state machine with no states
 ///
+#[derive(Clone)]
 pub struct EmptyStateMachine {
 }
 
@@ -40,7 +41,7 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Empt
     ///
     /// If a state is an accepting state, then this returns the output symbol that should be produced if this is the longest match
     ///
-    fn output_symbol_for_state(&self, _state: StateId) -> Option<OutputSymbol> {
+    fn output_symbol_for_state(&self, _state: StateId) -> Option<&OutputSymbol> {
         None
     }
 }
