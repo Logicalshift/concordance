@@ -14,6 +14,11 @@
 //   limitations under the License.
 //
 
+use std::rc::*;
+
+///
+/// Identifies a state in a state machine
+///
 pub type StateId = u32;
 
 ///
@@ -31,7 +36,7 @@ pub trait StateMachine<InputSymbol, OutputSymbol> {
     ///
     /// Returns the transitions for a particular symbol 
     ///
-    fn get_transitions_for_state(&self, state: StateId) -> [(InputSymbol, StateId)];
+    fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)>;
 
     ///
     /// If a state is an accepting state, then this returns the output symbol that should be produced if this is the longest match
@@ -44,3 +49,43 @@ pub trait StateMachine<InputSymbol, OutputSymbol> {
 /// transition per symbol from the original)
 ///
 pub trait DeterministicStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSymbol, OutputSymbol> { }
+
+///
+/// Any reference to a state machine is also a state machine
+///
+impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<StateMachine<InputSymbol, OutputSymbol>> {
+    #[inline]
+    fn count_states(&self) -> StateId {
+        (**self).count_states()
+    }
+
+    #[inline]
+    fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
+        (**self).get_transitions_for_state(state)
+    }
+
+    #[inline]
+    fn output_symbol_for_state(&self, state: StateId) -> Option<OutputSymbol> {
+        (**self).output_symbol_for_state(state)
+    }
+}
+
+impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<DeterministicStateMachine<InputSymbol, OutputSymbol>> {
+    #[inline]
+    fn count_states(&self) -> StateId {
+        (**self).count_states()
+    }
+
+    #[inline]
+    fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
+        (**self).get_transitions_for_state(state)
+    }
+
+    #[inline]
+    fn output_symbol_for_state(&self, state: StateId) -> Option<OutputSymbol> {
+        (**self).output_symbol_for_state(state)
+    }
+}
+
+impl<InputSymbol, OutputSymbol> DeterministicStateMachine<InputSymbol, OutputSymbol> for Rc<DeterministicStateMachine<InputSymbol, OutputSymbol>> {
+}
