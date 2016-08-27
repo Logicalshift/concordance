@@ -41,7 +41,8 @@
 //! ```
 //!
 //! For convenience, these methods will work on any type that can be converted into a pattern. Every regular expression
-//! can be converted into a regular pattern, but these patterns are also for symbol types other than characters.
+//! can be converted into a regular pattern, but these patterns are also for symbol types other than characters, and do
+//! not require any quoting in order to be used (and are hence much easier to use with dynamic values).
 //!
 //! ```
 //! # use ndfa::*;
