@@ -64,6 +64,11 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
     fn add_transition(&mut self, state: StateId, for_symbol: InputSymbol, new_state: StateId);
 
     ///
+    /// Ensures that a state with the specified ID exists in this state machine
+    ///
+    fn create_state(&mut self, state: StateId);
+
+    ///
     /// Sets the output symbol to use for a particular state
     ///
     fn set_output_symbol(&mut self, state: StateId, new_output_symbol: OutputSymbol);

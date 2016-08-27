@@ -161,6 +161,15 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
     }
 
     ///
+    /// Ensures that a state with the specified ID exists in this state machine
+    ///
+    fn create_state(&mut self, state: StateId) {
+        if state > self.max_state {
+            self.max_state = state;
+        }
+    }
+
+    ///
     /// Sets the output symbol for a particular state
     ///
     fn set_output_symbol(&mut self, state: StateId, new_output_symbol: OutputSymbol) {
@@ -205,6 +214,15 @@ mod tests {
         let ndfa: Ndfa<u32, u32> = Ndfa::new();
 
         assert!(ndfa.count_states() == 1);
+    }
+
+    #[test]
+    fn can_create_state_1() {
+        let ndfa: Ndfa<u32, u32> = Ndfa::new();
+
+        ndfa.create_state(1);
+
+        assert!(ndfa.count_states() == 2);
     }
 
     #[test]
