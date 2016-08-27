@@ -125,7 +125,15 @@ impl<Symbol: Clone> Pattern<Symbol> {
             },
 
             &MatchAll(ref patterns) => {
-                start_state
+                // Match each pattern in turn
+                let mut current_state = start_state;
+
+                for pattern in patterns {
+                    let next_state = self.compile(state_machine, current_state);
+                    current_state = next_state;
+                }
+
+                current_state
             },
 
             &MatchAny(ref patterns) => {
