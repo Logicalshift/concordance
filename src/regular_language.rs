@@ -27,7 +27,7 @@ use std::slice::*;
 ///
 /// A phrase iterator can be used to return the symbols in a phrase one at a time
 ///
-trait PhraseIterator<Symbol> {
+trait PhraseIterator<'a, Symbol> {
     fn next_symbol(&mut self) -> Option<&Symbol>;
 }
 
@@ -35,24 +35,20 @@ trait PhraseIterator<Symbol> {
 /// Phrases are sequences of symbols, matched in order
 ///
 trait Phrase<Symbol> {
-    type PhraseIterator: PhraseIterator<Symbol>;
-
     ///
     /// Retrieves an iterator that can be used to read the symbols for this phrase
     ///
-    fn get_symbols(&self) -> Self::PhraseIterator;
+    fn get_symbols<'a>(&self) -> PhraseIterator<'a, Symbol>;
 }
 
-impl<'a, Symbol> Phrase<Symbol> for &'a Vec<Symbol> {
-    type PhraseIterator = Iter<'a, Symbol>;
-
+impl<Symbol> Phrase<Symbol> for Vec<Symbol> {
     #[inline]
-    fn get_symbols(&self) -> Self::PhraseIterator {
+    fn get_symbols<'a>(&self) -> PhraseIterator<'a, Symbol> {
         self.iter()
     }
 }
 
-impl<'a, Symbol> PhraseIterator<Symbol> for Iter<'a, Symbol> {
+impl<'a, Symbol> PhraseIterator<'a, Symbol> for Iter<'a, Symbol> {
     #[inline]
     fn next_symbol(&mut self) -> Option<&Symbol> {
         self.next()
