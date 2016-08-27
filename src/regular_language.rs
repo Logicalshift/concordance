@@ -22,7 +22,7 @@
 //! a simple regular expression.
 //!
 
-use super::phrase::*;
+use std::iter::FromIterator;
 use std::ops::Range;
 
 ///
@@ -68,41 +68,40 @@ pub use Pattern::*;
 ///
 /// Implemented by things that can be converted into a pattern
 ///
-pub trait IntoPattern<'a, Symbol> {
+pub trait ToPattern<Symbol> {
     ///
     /// Converts a particular object into a pattern that will match it
     ///
-    fn into_pattern(&'a self) -> Pattern<Symbol>;
+    fn to_pattern(&self) -> Pattern<Symbol>;
 }
 
-impl<'a, Symbol: Clone> IntoPattern<'a, Symbol> for Pattern<Symbol> {
-    fn into_pattern(&self) -> Pattern<Symbol> {
+impl<Symbol: Clone> ToPattern<Symbol> for Pattern<Symbol> {
+    fn to_pattern(&self) -> Pattern<Symbol> {
         self.clone()
     }
 }
 
-impl<'a, Symbol: Clone> IntoPattern<'a, Symbol> for Box<Pattern<Symbol>> {
-    fn into_pattern(&self) -> Pattern<Symbol> {
+impl<Symbol: Clone> ToPattern<Symbol> for Box<Pattern<Symbol>> {
+    fn to_pattern(&self) -> Pattern<Symbol> {
         (**self).clone()
     }
 }
 
-impl<'a, Symbol: Clone, Iterator: PhraseIterator<'a, Symbol>> IntoPattern<'a, Symbol> for Phrase<'a, Symbol, PhraseIterator=Iterator> {
-    ///
-    /// Phrases can be turned into a literal matching pattern
-    ///
-    fn into_pattern(&'a self) -> Pattern<Symbol> {
-        let mut result = vec![];
-        let mut reader = self.get_symbols();
+impl<Symbol: Clone> ToPattern<Symbol> for Vec<Symbol> {
+    fn to_pattern(&self) -> Pattern<Symbol> {
+        Match(self.clone())
+    }
+}
 
-        loop {
-            match reader.next_symbol() {
-                Some(symbol)    => result.push(symbol.clone()),
-                None            => break
-            }
-        }
+impl<Symbol: Clone> ToPattern<Symbol> for [Symbol] {
+    fn to_pattern(&self) -> Pattern<Symbol> {
+        Match(self.to_vec())
+    }
+}
 
-        Match(result)
+impl ToPattern<char> for str {
+    fn to_pattern(&self) -> Pattern<char> {
+        Match(Vec::from_iter(self.chars()))
     }
 }
 
@@ -116,7 +115,7 @@ pub trait PatternBuilder<Symbol> {
     fn empty() -> Pattern<Symbol>;
 
     /// Appends a pattern to this one
-    fn append(self, pattern: IntoPattern<Symbol>) -> Pattern<Symbol>;
+    fn append(self, pattern: ToPattern<Symbol>) -> Pattern<Symbol>;
 
     /// Repeats the current pattern forever
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol>;
@@ -132,28 +131,25 @@ impl<Symbol> Pattern<Symbol> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::super::phrase::*;
 
     #[test]
     fn can_convert_vec_to_pattern() {
-        let pattern = vec![0, 1, 2].into_pattern();
+        let pattern = vec![0, 1, 2].to_pattern();
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
 
     #[test]
     fn can_convert_array_to_pattern() {
-        let pattern = [0, 1, 2].into_pattern();
+        let pattern = [0, 1, 2].to_pattern();
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
 
-    /*
     #[test]
     fn can_convert_string_to_pattern() {
-        let pattern = "abc".into_pattern();
+        let pattern = "abc".to_pattern();
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
-    */
 }
