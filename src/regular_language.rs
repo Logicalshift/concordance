@@ -37,7 +37,7 @@
 //! # use ndfa::*;
 //! let stuff_or_nonsense = "stuff".or("nonsense");
 //! let any_amount_of_stuff = "stuff".repeat_forever(1);
-//! let went_to_market = "piggies".repeat(0..10);
+//! let went_to_market = "piggies".repeat(0..5);
 //! ```
 //!
 //! For convenience, these methods will work on any type that can be converted into a pattern. Every regular expression
@@ -55,7 +55,7 @@ use std::ops::Range;
 ///
 /// A Pattern represents a matching pattern in a regular language
 ///
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Pattern<Symbol> {
     ///
     /// Matches nothing
