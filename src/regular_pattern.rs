@@ -202,6 +202,11 @@ impl<Symbol: Clone+'static> ToNdfa<Symbol> for Pattern<Symbol> {
     }
 }
 
+impl<Symbol: Clone+'static> ToNdfa<Symbol> for ToPattern<Symbol> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+        self.to_pattern().to_ndfa(output)
+    }
+}
 
 pub use Pattern::*;
 
@@ -473,6 +478,13 @@ mod test {
     fn can_build_ndfa() {
         let pattern = "abc".or("xyz").repeat_forever(0);
         let ndfa = pattern.to_ndfa("success");
+
+        assert!(ndfa.count_states() > 1);
+    }
+
+    #[test]
+    fn can_build_ndfa_from_patternable() {
+        let ndfa = "abc".to_ndfa("success");
 
         assert!(ndfa.count_states() > 1);
     }
