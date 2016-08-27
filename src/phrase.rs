@@ -21,6 +21,7 @@
 //!
 
 use std::slice::*;
+use std::iter::FromIterator;
 
 ///
 /// A phrase iterator can be used to return the symbols in a phrase one at a time
@@ -66,28 +67,28 @@ impl<'a, Symbol> Phrase<Symbol> for &'a [Symbol] {
     }
 }
 
-impl<'a> Phrase<u8> for &'a str {
-    type PhraseIterator = StringPhraseIterator<'a>;
+impl<'a> Phrase<char> for &'a str {
+    type PhraseIterator = StringPhraseIterator;
 
     #[inline]
     fn get_symbols(self) -> Self::PhraseIterator {
-        StringPhraseIterator { index: 0, string: self.as_bytes() }
+        StringPhraseIterator { index: 0, string: Vec::from_iter(self.chars()) }
     }
 }
 
 ///
 /// Phrase iterator that goes over a string
 ///
-pub struct StringPhraseIterator<'a> {
+pub struct StringPhraseIterator {
     /// Where we've reached in the string
     index: usize,
 
     /// The string that this iterator will cover
-    string: &'a [u8]
+    string: Vec<char>
 }
 
-impl<'a> PhraseIterator<u8> for StringPhraseIterator<'a> {
-    fn next_symbol(&mut self) -> Option<&u8> {
+impl PhraseIterator<char> for StringPhraseIterator {
+    fn next_symbol(&mut self) -> Option<&char> {
         if self.index >= self.string.len() {
             None
         } else {
@@ -130,9 +131,9 @@ mod tests {
         let some_phrase     = "ABC";
         let mut iterator    = some_phrase.get_symbols();
 
-        assert!(iterator.next_symbol() == Some(&65));
-        assert!(iterator.next_symbol() == Some(&66));
-        assert!(iterator.next_symbol() == Some(&67));
+        assert!(iterator.next_symbol() == Some(&'A'));
+        assert!(iterator.next_symbol() == Some(&'B'));
+        assert!(iterator.next_symbol() == Some(&'C'));
         assert!(iterator.next_symbol() == None);
     }
 }
