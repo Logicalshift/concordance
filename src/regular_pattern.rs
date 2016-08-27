@@ -208,14 +208,14 @@ impl<Symbol: Clone+'static> ToNdfa<Symbol> for ToPattern<Symbol> {
     }
 }
 
-impl<'a> ToNdfa<char> for &'a str {
-    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<char, OutputSymbol>> {
+impl ToNdfa<char> for str {
+    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<char, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
 
-impl<'a, Symbol: Clone+'static> ToNdfa<Symbol> for [Symbol] {
-    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+impl<Symbol: Clone+'static> ToNdfa<Symbol> for [Symbol] {
+    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
