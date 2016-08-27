@@ -26,38 +26,39 @@ use std::iter::FromIterator;
 ///
 /// A phrase iterator can be used to return the symbols in a phrase one at a time
 ///
-pub trait PhraseIterator<Symbol> {
-    fn next_symbol(&mut self) -> Option<&Symbol>;
+pub trait PhraseIterator<'a, Symbol> {
+    fn next_symbol(&mut self) -> Option<&'a Symbol>;
 }
 
 ///
 /// Phrases are sequences of symbols, matched in order
 ///
-pub trait Phrase<Symbol> {
-    type PhraseIterator: PhraseIterator<Symbol>;
+pub trait Phrase<'a, Symbol> {
+    type PhraseIterator: PhraseIterator<'a, Symbol>;
 
     ///
     /// Retrieves an iterator that can be used to read the symbols for this phrase
     ///
-    fn get_symbols(self) -> Self::PhraseIterator;
+    fn get_symbols(&'a self) -> Self::PhraseIterator;
 }
 
-impl<'a, Symbol> Phrase<Symbol> for &'a Vec<Symbol> {
+impl<'a, Symbol: 'a> Phrase<'a, Symbol> for Vec<Symbol> {
     type PhraseIterator = Iter<'a, Symbol>;
 
     #[inline]
-    fn get_symbols(self) -> Self::PhraseIterator {
+    fn get_symbols(&'a self) -> Self::PhraseIterator {
         self.iter()
     }
 }
 
-impl<'a, Symbol> PhraseIterator<Symbol> for Iter<'a, Symbol> {
+impl<'a, Symbol> PhraseIterator<'a, Symbol> for Iter<'a, Symbol> {
     #[inline]
-    fn next_symbol(&mut self) -> Option<&Symbol> {
+    fn next_symbol(&mut self) -> Option<&'a Symbol> {
         self.next()
     }
 }
 
+/*
 impl<'a, Symbol> Phrase<Symbol> for &'a [Symbol] {
     type PhraseIterator = Iter<'a, Symbol>;
 
@@ -99,6 +100,7 @@ impl PhraseIterator<char> for StringPhraseIterator {
         }
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
@@ -109,12 +111,13 @@ mod tests {
         let some_phrase     = vec![1, 2, 3];
         let mut iterator    = some_phrase.get_symbols();
 
-        assert!(iterator.next_symbol() == Some(&1));
-        assert!(iterator.next_symbol() == Some(&2));
-        assert!(iterator.next_symbol() == Some(&3));
+        assert!(Some(&1) == iterator.next_symbol());
+        assert!(Some(&2) == iterator.next_symbol());
+        assert!(Some(&3) == iterator.next_symbol());
         assert!(iterator.next_symbol() == None);
     }
 
+    /*
     #[test]
     fn can_iterate_array_phrase() {
         let some_phrase     = [1, 2, 3];
@@ -136,4 +139,5 @@ mod tests {
         assert!(iterator.next_symbol() == Some(&'C'));
         assert!(iterator.next_symbol() == None);
     }
+    */
 }

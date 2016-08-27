@@ -24,10 +24,10 @@ pub use self::state_machine::*;
 pub use self::empty_state_machine::*;
 pub use self::ndfa::*;
 pub use self::phrase::*;
-pub use self::regular_language::*;
+//pub use self::regular_language::*;
 
 pub mod state_machine;
 pub mod empty_state_machine;
 pub mod ndfa;
 pub mod phrase;
-pub mod regular_language;
+// pub mod regular_language;
