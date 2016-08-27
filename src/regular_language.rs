@@ -97,7 +97,7 @@ impl<Symbol> IntoPattern<Symbol> for Box<Pattern<Symbol>> {
     }
 }
 
-impl<'a, Symbol> IntoPattern<Symbol> for &'a ToPattern<Symbol> {
+impl<'a, Symbol, PatternType: ToPattern<Symbol>> IntoPattern<Symbol> for &'a PatternType {
     fn into_pattern(self) -> Pattern<Symbol> {
         self.to_pattern()
     }
@@ -187,7 +187,7 @@ mod test {
 
     #[test]
     fn can_convert_vec_to_pattern() {
-        let pattern = vec![0, 1, 2].to_pattern();
+        let pattern = vec![0, 1, 2].into_pattern();
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
