@@ -68,39 +68,30 @@ pub use Pattern::*;
 ///
 /// Implemented by things that can be converted into a pattern
 ///
-pub trait IntoPattern<Symbol> {
+pub trait IntoPattern<'a, Symbol> {
     ///
     /// Converts a particular object into a pattern that will match it
     ///
-    fn into_pattern(self) -> Pattern<Symbol>;
+    fn into_pattern(&'a self) -> Pattern<Symbol>;
 }
 
-/* -- want this to work, but it doesn't due to the trait below
-
-impl<Symbol> IntoPattern<Symbol> for Pattern<Symbol> {
-    fn into_pattern(self) -> Pattern<Symbol> {
-        self
-    }
-}
-
-impl<'a, Symbol: Clone> IntoPattern<Symbol> for &'a Pattern<Symbol> {
-    fn into_pattern(self) -> Pattern<Symbol> {
+impl<'a, Symbol: Clone> IntoPattern<'a, Symbol> for Pattern<Symbol> {
+    fn into_pattern(&self) -> Pattern<Symbol> {
         self.clone()
     }
 }
 
-impl<'a, Symbol: Clone> IntoPattern<Symbol> for &'a Box<Pattern<Symbol>> {
-    fn into_pattern(self) -> Pattern<Symbol> {
+impl<'a, Symbol: Clone> IntoPattern<'a, Symbol> for Box<Pattern<Symbol>> {
+    fn into_pattern(&self) -> Pattern<Symbol> {
         (**self).clone()
     }
 }
-*/
 
-impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>, PhraseType: Phrase<Symbol, PhraseIterator=Iterator>> IntoPattern<Symbol> for PhraseType {
+impl<'a, Symbol: Clone, Iterator: PhraseIterator<'a, Symbol>> IntoPattern<'a, Symbol> for Phrase<'a, Symbol, PhraseIterator=Iterator> {
     ///
     /// Phrases can be turned into a literal matching pattern
     ///
-    fn into_pattern(self) -> Pattern<Symbol> {
+    fn into_pattern(&'a self) -> Pattern<Symbol> {
         let mut result = vec![];
         let mut reader = self.get_symbols();
 
@@ -141,6 +132,14 @@ impl<Symbol> Pattern<Symbol> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::super::phrase::*;
+
+    #[test]
+    fn can_convert_vec_to_pattern() {
+        let pattern = vec![0, 1, 2].into_pattern();
+
+        assert!(pattern == Match(vec![0, 1, 2]));
+    }
 
     #[test]
     fn can_convert_array_to_pattern() {
@@ -149,10 +148,12 @@ mod test {
         assert!(pattern == Match(vec![0, 1, 2]));
     }
 
+    /*
     #[test]
     fn can_convert_string_to_pattern() {
         let pattern = "abc".into_pattern();
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
+    */
 }
