@@ -33,12 +33,12 @@ pub enum Pattern<Symbol> {
     ///
     /// Matches nothing
     ///
-    Nothing,
+    Epsilon,
 
     ///
     /// Matches a specific literal phrase
     ///
-    Phrase(Vec<Symbol>),
+    Match(Vec<Symbol>),
 
     ///
     /// Matches at least a particular number of repetitions of a pattern
@@ -55,10 +55,12 @@ pub enum Pattern<Symbol> {
     ///
     /// Matches a set of sub-patterns in order
     ///
-    And(Vec<Pattern<Symbol>>),
+    MatchAll(Vec<Pattern<Symbol>>),
 
     ///
     /// Matches any one of a set of patterns
     ///
-    Or(Vec<Pattern<Symbol>>)
+    MatchAny(Vec<Pattern<Symbol>>)
 }
+
+pub use Pattern::*;
