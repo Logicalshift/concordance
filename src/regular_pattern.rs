@@ -208,6 +208,18 @@ impl<Symbol: Clone+'static> ToNdfa<Symbol> for ToPattern<Symbol> {
     }
 }
 
+impl<'a> ToNdfa<char> for &'a str {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<char, OutputSymbol>> {
+        self.to_pattern().to_ndfa(output)
+    }
+}
+
+impl<'a, Symbol: Clone+'static> ToNdfa<Symbol> for [Symbol] {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+        self.to_pattern().to_ndfa(output)
+    }
+}
+
 pub use Pattern::*;
 
 ///
@@ -484,8 +496,14 @@ mod test {
 
     #[test]
     fn can_build_ndfa_from_patternable() {
-        let ndfa = "abc".to_ndfa("success");
+        let ndfa_str = "abc".to_ndfa("success");
+        assert!(ndfa_str.count_states() > 1);
 
-        assert!(ndfa.count_states() > 1);
+        let ndfa_array = [1, 2, 3].to_ndfa("success");
+        assert!(ndfa_array.count_states() > 1);
+
+        let vec: Vec<u32> = vec![1, 2, 3];
+        let ndfa_vec = vec.to_ndfa("success");
+        assert!(ndfa_vec.count_states() > 1);
     }
 }
