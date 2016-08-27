@@ -59,7 +59,7 @@ use super::state_machine::*;
 /// A Pattern represents a matching pattern in a regular language
 ///
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Pattern<Symbol> {
+pub enum Pattern<Symbol: Clone> {
     ///
     /// Matches nothing
     ///
@@ -93,12 +93,45 @@ pub enum Pattern<Symbol> {
     MatchAny(Vec<Pattern<Symbol>>)
 }
 
-impl<Symbol> Pattern<Symbol> {
+impl<Symbol: Clone> Pattern<Symbol> {
     ///
     /// Compiles this pattern onto a state machine, returning the accepting symbol
     ///
     pub fn compile<OutputSymbol>(&self, state_machine: &mut MutableStateMachine<Symbol, OutputSymbol>, start_state: StateId) -> StateId {
-        unimplemented!()
+        match self {
+            &Epsilon => {
+                start_state
+            },
+
+            &Match(ref symbols) => {
+                // Match each symbol in turn
+                let mut current_state = start_state;
+
+                for sym in symbols {
+                    let next_state = state_machine.count_states();
+                    state_machine.add_transition(current_state, sym.clone(), next_state);
+                    current_state = next_state;
+                }
+
+                current_state
+            },
+
+            &RepeatInfinite(ref count, ref pattern) => {
+                start_state
+            },
+
+            &Repeat(ref range, ref pattern) => {
+                start_state
+            },
+
+            &MatchAll(ref patterns) => {
+                start_state
+            },
+
+            &MatchAny(ref patterns) => {
+                start_state
+            }
+        }
     }
 }
 
@@ -107,7 +140,7 @@ pub use Pattern::*;
 ///
 /// Implemented by things that can be converted into a pattern
 ///
-pub trait ToPattern<Symbol> {
+pub trait ToPattern<Symbol: Clone> {
     ///
     /// Converts a particular object into a pattern that will match it
     ///
@@ -117,21 +150,21 @@ pub trait ToPattern<Symbol> {
 ///
 /// Implemented by things that can be converted into a pattern
 ///
-pub trait IntoPattern<Symbol> {
+pub trait IntoPattern<Symbol: Clone> {
     ///
     /// Converts a particular object into a pattern that will match it
     ///
     fn into_pattern(self) -> Pattern<Symbol>;
 }
 
-impl<Symbol> IntoPattern<Symbol> for Pattern<Symbol> {
+impl<Symbol: Clone> IntoPattern<Symbol> for Pattern<Symbol> {
     #[inline]
     fn into_pattern(self) -> Pattern<Symbol> {
         self
     }
 }
 
-impl<Symbol> IntoPattern<Symbol> for Box<Pattern<Symbol>> {
+impl<Symbol: Clone> IntoPattern<Symbol> for Box<Pattern<Symbol>> {
     #[inline]
     fn into_pattern(self) -> Pattern<Symbol> {
         *self
@@ -199,7 +232,7 @@ impl ToPattern<char> for str {
 ///
 /// Pattern transformers act by altering a single pattern object into a new form
 ///
-pub trait PatternTransformer<Symbol> {
+pub trait PatternTransformer<Symbol: Clone> {
     /// Repeats the current pattern forever
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol>;
 
@@ -210,7 +243,7 @@ pub trait PatternTransformer<Symbol> {
 ///
 /// Implemented by things that combine patterns together to create new patterns
 ///
-pub trait PatternCombiner<Symbol, SecondPattern: IntoPattern<Symbol>> {
+pub trait PatternCombiner<Symbol: Clone, SecondPattern: IntoPattern<Symbol>> {
     /// Appends a pattern to this one
     fn append(self, pattern: SecondPattern) -> Pattern<Symbol>;
 
@@ -218,11 +251,7 @@ pub trait PatternCombiner<Symbol, SecondPattern: IntoPattern<Symbol>> {
     fn or(self, pattern: SecondPattern) -> Pattern<Symbol>;
 }
 
-impl<Symbol> Pattern<Symbol> {
-
-}
-
-impl<Symbol, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for PatternType {
+impl<Symbol: Clone, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for PatternType {
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol> {
         RepeatInfinite(min_count, Box::new(self.into_pattern()))
     }
