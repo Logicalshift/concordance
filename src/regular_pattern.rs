@@ -54,6 +54,7 @@ use std::iter::FromIterator;
 use std::ops::Range;
 
 use super::state_machine::*;
+use super::ndfa::*;
 
 ///
 /// A Pattern represents a matching pattern in a regular language
@@ -189,6 +190,18 @@ impl<Symbol: Clone> Pattern<Symbol> {
         }
     }
 }
+
+impl<Symbol: Clone+'static> ToNdfa<Symbol> for Pattern<Symbol> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+        let mut result  = Ndfa::new();
+        let end_state   = self.compile(&mut result, 0);
+
+        result.set_output_symbol(end_state, output);
+
+        Box::new(result)
+    }
+}
+
 
 pub use Pattern::*;
 
