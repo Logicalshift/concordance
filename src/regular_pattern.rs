@@ -383,6 +383,7 @@ impl<Symbol: Clone, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPat
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::super::state_machine::*;
 
     #[test]
     fn can_convert_vec_to_pattern() {
@@ -466,5 +467,13 @@ mod test {
         let pattern = MatchAny(vec!["abc".to_pattern()]).or(MatchAny(vec!["def".to_pattern()]));
 
         assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_build_ndfa() {
+        let pattern = "abc".or("xyz").repeat_forever(0);
+        let ndfa = pattern.to_ndfa("success");
+
+        assert!(ndfa.count_states() > 1);
     }
 }
