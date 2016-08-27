@@ -227,4 +227,33 @@ mod test {
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
+
+    #[test]
+    fn can_repeat_pattern() {
+        let pattern = "abc".repeat(1..2);
+
+        assert!(pattern == Repeat(1..2, Box::new(Match(vec!['a', 'b', 'c']))));
+    }
+
+    #[test]
+    fn can_repeat_pattern_forever() {
+        let pattern = "abc".repeat_forever(0);
+
+        assert!(pattern == RepeatInfinite(0, Box::new(Match(vec!['a', 'b', 'c']))));
+    }
+
+    #[test]
+    fn can_append_pattern() {
+        let pattern = "abc".append(&"def".into_pattern());
+
+        assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+        //assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c', 'd', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_or_pattern() {
+        let pattern = "abc".or(&"def".into_pattern());
+
+        assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+    }
 }
