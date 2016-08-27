@@ -64,3 +64,48 @@ pub enum Pattern<Symbol> {
 }
 
 pub use Pattern::*;
+
+///
+/// Implemented by things that can be converted into a pattern
+///
+pub trait IntoPattern<Symbol> {
+    ///
+    /// Converts a particular object into a pattern that will match it
+    ///
+    fn into_pattern(self) -> Pattern<Symbol>;
+}
+
+impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>> IntoPattern<Symbol> for &'a Phrase<Symbol, PhraseIterator=Iterator> {
+    ///
+    /// Phrases can be turned into a literal matching pattern
+    ///
+    fn into_pattern(self) -> Pattern<Symbol> {
+        let mut result = vec![];
+        let mut reader = self.get_symbols();
+
+        loop {
+            match reader.next_symbol() {
+                Some(symbol)    => result.push(symbol.clone()),
+                None            => break
+            }
+        }
+
+        Match(result)
+    }
+}
+
+impl<Symbol> Pattern<Symbol> {
+
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn can_convert_string_to_pattern() {
+        let pattern = "abc".into_pattern();
+
+        assert!(pattern == Match(vec!['a', 'b', 'c']));
+    }
+}
