@@ -41,6 +41,9 @@ pub trait StateMachine<InputSymbol, OutputSymbol> {
     ///
     /// Returns the number of states in this state machine
     ///
+    /// Note that if state x exists then state x-1 is also expected to exist provided x > 0. This means that this returns the
+    /// first unused state in this state machine.
+    ///
     fn count_states(&self) -> StateId;
 
     ///
