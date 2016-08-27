@@ -193,13 +193,54 @@ impl<Symbol, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for Pa
     }
 }
 
-impl<Symbol, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPattern<Symbol>> PatternCombiner<Symbol, SecondPatternType> for PatternType {
+impl<Symbol: Clone, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPattern<Symbol>> PatternCombiner<Symbol, SecondPatternType> for PatternType {
     fn append(self, pattern: SecondPatternType) -> Pattern<Symbol> {
-        MatchAll(vec![self.into_pattern(), pattern.into_pattern()])
+        // Get the two patterns to combine
+        let first_pattern   = self.into_pattern();
+        let second_pattern  = pattern.into_pattern();
+
+        // Combination rules depend on what the patterns are
+        match (first_pattern, second_pattern) {
+            // Combining 'Match(x)' and 'Match(y)' should produce 'Match(xy)'
+            (Match(first_string), Match(second_string)) => Match(first_string.into_iter().chain(second_string.into_iter()).collect()),
+
+            // Combining 'MatchAll(x)' and 'MatchAll(y)' should produce 'MatchAll(xy)'
+            (MatchAll(first_string), MatchAll(second_string)) => MatchAll(first_string.into_iter().chain(second_string.into_iter()).collect()),
+
+            // Combining 'MatchAll(x)' and 'y' should produce 'MatchAll(xy)'
+            (MatchAll(first_string), second) => {
+                let mut result = first_string.clone();
+                result.push(second);
+                MatchAll(result)
+            },
+
+            // Combining 'x' and 'MatchAll(y)' should produce 'MatchAll(xy)'
+            (first, MatchAll(second_string)) => {
+                let mut result: Vec<Pattern<Symbol>> = vec![first];
+                for p in second_string {
+                    result.push(p.clone());
+                }
+                MatchAll(result)
+            },
+
+            // Everything else is just MatchAll(xy)
+            (first, second) => MatchAll(vec![first, second])
+        }
     }
 
     fn or(self, pattern: SecondPatternType) -> Pattern<Symbol> {
-        MatchAny(vec![self.into_pattern(), pattern.into_pattern()])
+        // Get the two patterns to combine
+        let first_pattern   = self.into_pattern();
+        let second_pattern  = pattern.into_pattern();
+
+        // Combination rules depend on what the patterns are
+        match (first_pattern, second_pattern) {
+            // Combining 'MatchAny(x)' and 'MatchAny(y)' should produce 'MatchAny(xy)'
+            (MatchAny(first_string), MatchAny(second_string)) => MatchAny(first_string.into_iter().chain(second_string.into_iter()).collect()),
+
+            // Everything else is just MatchAny(xy)
+            (first, second) => MatchAny(vec![first, second])
+        }
     }
 }
 
@@ -243,16 +284,50 @@ mod test {
     }
 
     #[test]
-    fn can_append_pattern() {
+    fn can_append_pattern_combine_matches() {
         let pattern = "abc".append("def");
 
+        assert!(pattern == Match(vec!['a', 'b', 'c', 'd', 'e', 'f']));
+    }
+
+    #[test]
+    fn can_append_pattern_combine_matchalls_left() {
+        let pattern = MatchAll(vec!["abc".to_pattern()]).append("def");
+
         assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
-        //assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c', 'd', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_append_pattern_combine_matchalls_right() {
+        let pattern = "abc".append(MatchAll(vec!["def".to_pattern()]));
+
+        assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_append_pattern_combine_matchalls_both() {
+        let pattern = MatchAll(vec!["abc".to_pattern()]).append(MatchAll(vec!["def".to_pattern()]));
+
+        assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_append_pattern_combine_not_matchall_or_match() {
+        let pattern: Pattern<char> = MatchAny(vec![Epsilon]).append(MatchAny(vec![Epsilon]));
+
+        assert!(pattern == MatchAll(vec![MatchAny(vec![Epsilon]), MatchAny(vec![Epsilon])]));
     }
 
     #[test]
     fn can_or_pattern() {
         let pattern = "abc".or("def");
+
+        assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
+    }
+
+    #[test]
+    fn can_or_pattern_combine_matchanys() {
+        let pattern = MatchAny(vec!["abc".to_pattern()]).or(MatchAny(vec!["def".to_pattern()]));
 
         assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
     }
