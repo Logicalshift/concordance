@@ -122,16 +122,16 @@ impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>, PhraseType: Phrase<Sym
 ///
 pub trait PatternBuilder<Symbol> {
     /// Creates an empty pattern
-    fn empty() -> Box<Pattern<Symbol>>;
+    fn empty() -> Pattern<Symbol>;
 
     /// Appends a pattern to this one
-    fn append(self, pattern: IntoPattern<Symbol>) -> Box<Pattern<Symbol>>;
+    fn append(self, pattern: IntoPattern<Symbol>) -> Pattern<Symbol>;
 
     /// Repeats the current pattern forever
-    fn repeat_forever(self, min_count: u32) -> Box<Pattern<Symbol>>;
+    fn repeat_forever(self, min_count: u32) -> Pattern<Symbol>;
 
     /// Repeats the current pattern for a certain number of iterations
-    fn repeat(self, count: Range<u32>) -> Box<Pattern<Symbol>>;
+    fn repeat(self, count: Range<u32>) -> Pattern<Symbol>;
 }
 
 impl<Symbol> Pattern<Symbol> {
