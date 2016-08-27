@@ -75,6 +75,27 @@ pub trait IntoPattern<Symbol> {
     fn into_pattern(self) -> Pattern<Symbol>;
 }
 
+/* -- want this to work, but it doesn't due to the trait below
+
+impl<Symbol> IntoPattern<Symbol> for Pattern<Symbol> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        self
+    }
+}
+
+impl<'a, Symbol: Clone> IntoPattern<Symbol> for &'a Pattern<Symbol> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        self.clone()
+    }
+}
+
+impl<'a, Symbol: Clone> IntoPattern<Symbol> for &'a Box<Pattern<Symbol>> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        (**self).clone()
+    }
+}
+*/
+
 impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>, PhraseType: Phrase<Symbol, PhraseIterator=Iterator>> IntoPattern<Symbol> for PhraseType {
     ///
     /// Phrases can be turned into a literal matching pattern
@@ -92,6 +113,25 @@ impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>, PhraseType: Phrase<Sym
 
         Match(result)
     }
+}
+
+///
+/// Implemented by things that can build up patterns
+///
+/// Patterns are built in boxes to avoid the need for a lot of copying
+///
+pub trait PatternBuilder<Symbol> {
+    /// Creates an empty pattern
+    fn empty() -> Box<Pattern<Symbol>>;
+
+    /// Appends a pattern to this one
+    fn append(self, pattern: IntoPattern<Symbol>) -> Box<Pattern<Symbol>>;
+
+    /// Repeats the current pattern forever
+    fn repeat_forever(self, min_count: u32) -> Box<Pattern<Symbol>>;
+
+    /// Repeats the current pattern for a certain number of iterations
+    fn repeat(self, count: Range<u32>) -> Box<Pattern<Symbol>>;
 }
 
 impl<Symbol> Pattern<Symbol> {
