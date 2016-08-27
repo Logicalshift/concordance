@@ -23,3 +23,52 @@
 //!
 
 use super::phrase::*;
+use std::ops::Range;
+
+///
+/// An Pattern represents a matching pattern in a regular language
+///
+#[derive(Clone)]
+pub enum Pattern<Symbol, PhraseType: Phrase<Symbol>> {
+    ///
+    /// Matches nothing
+    ///
+    Nothing,
+
+    ///
+    /// Matches a single symbol
+    ///
+    Symbol(Symbol),
+
+    ///
+    /// Matches a specific literal phrase
+    ///
+    Phrase(PhraseType),
+
+    ///
+    /// Matches at least a particular number of repetitions of a pattern
+    ///
+    /// `RepeatInfinite(0, X)` is the equivalent of the regular expression `X*`, `RepeatInfinite(1, X)` is the equivalent of the regular expression `X+`
+    ///
+    RepeatInfinite(u32, Box<Pattern<Symbol, PhraseType>>),
+
+    ///
+    /// Matches a range of repetitions of a pattern
+    ///
+    Repeat(Range<u32>, Box<Pattern<Symbol, PhraseType>>),
+
+    ///
+    /// Matches 0 or 1 instances of a pattern
+    ///
+    Optional(Box<Pattern<Symbol, PhraseType>>),
+
+    ///
+    /// Matches a set of sub-patterns in order
+    ///
+    And(Vec<Pattern<Symbol, PhraseType>>),
+
+    ///
+    /// Matches any one of a set of patterns
+    ///
+    Or(Vec<Pattern<Symbol, PhraseType>>)
+}
