@@ -74,6 +74,8 @@ impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
     ///
     #[inline]
     fn get_join_closure(&self, state: StateId) -> HashSet<StateId> {
+        // TODO: this is a great use-case for the BitSet collection (available in the nightlies)
+
         // The result is initially empty. We'll add the initial state in the first pass
         let mut result: HashSet<StateId> = HashSet::new();
 
@@ -102,10 +104,16 @@ impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
 }
 
 impl<InputSymbol : Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Ndfa<InputSymbol, OutputSymbol> {
+    ///
+    /// Retrieves the number of states in this state machine
+    ///
     fn count_states(&self) -> StateId {
         self.max_state + 1
     }
 
+    ///
+    /// Retrieves the transitions for a particular state
+    ///
     fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
         let empty           = vec![];
 
@@ -122,12 +130,18 @@ impl<InputSymbol : Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> 
         merged.map(|item| item.clone()).collect()
     }
 
+    ///
+    /// Retrieves the output symbol for a particular state
+    ///
     fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
         self.output_symbols.get(&state)
     }
 }
 
 impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputSymbol> for Ndfa<InputSymbol, OutputSymbol> {
+    ///
+    /// Creates a new transition in the state machine
+    ///
     fn add_transition(&mut self, state: StateId, for_symbol: InputSymbol, new_state: StateId) {
         // Make sure that max_state reflects the highest state added by the user
         if new_state > self.max_state {
@@ -146,6 +160,9 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
         self.transitions[state as usize].push((for_symbol, new_state));
     }
 
+    ///
+    /// Sets the output symbol for a particular state
+    ///
     fn set_output_symbol(&mut self, state: StateId, new_output_symbol: OutputSymbol) {
         // Output symbols update the max state too
         if state > self.max_state {
@@ -155,6 +172,9 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
         self.output_symbols.insert(state, new_output_symbol);
     }
 
+    ///
+    /// Joins two states so that the first state has the same transitions as the second state
+    ///
     fn join_states(&mut self, first_state: StateId, second_state: StateId) {
         // Joining states updates the overall state count_states
         if first_state > self.max_state {
