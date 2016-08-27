@@ -137,7 +137,16 @@ impl<Symbol: Clone> Pattern<Symbol> {
             },
 
             &MatchAny(ref patterns) => {
-                start_state
+                // Everything is compiled starting at a particular state, and everything ends on a particular state
+                let target_state = state_machine.count_states();
+                state_machine.create_state(target_state);
+
+                for pattern in patterns {
+                    let final_state = self.compile(state_machine, start_state);
+                    state_machine.join_states(final_state, target_state);
+                }
+
+                target_state
             }
         }
     }
