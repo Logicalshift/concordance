@@ -156,20 +156,11 @@ impl ToPattern<char> for str {
 }
 
 ///
-/// Implemented by things that can build up patterns
+/// Implemented by things that can modify existing patterns into other forms
 ///
-/// Patterns are built in boxes to avoid the need for a lot of copying
+/// Pattern transformers act by altering a single pattern object into a new form
 ///
-pub trait PatternBuilder<Symbol> {
-    /// Creates an empty pattern
-    fn empty() -> Pattern<Symbol>;
-
-    /// Appends a pattern to this one
-    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
-
-    /// Matches either this pattern or the specified pattern
-    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
-
+pub trait PatternTransformer<Symbol> {
     /// Repeats the current pattern forever
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol>;
 
@@ -177,29 +168,38 @@ pub trait PatternBuilder<Symbol> {
     fn repeat(self, count: Range<u32>) -> Pattern<Symbol>;
 }
 
+///
+/// Implemented by things that combine patterns together to create new patterns
+///
+pub trait PatternCreator<Symbol> {
+    /// Appends a pattern to this one
+    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
+
+    /// Matches either this pattern or the specified pattern
+    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
+}
+
 impl<Symbol> Pattern<Symbol> {
 
 }
 
-impl<Symbol> PatternBuilder<Symbol> for Pattern<Symbol> {
-    fn empty() -> Pattern<Symbol> { 
-        Epsilon
-    }
-
-    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
-        MatchAll(vec![self, pattern.to_pattern()])
-    }
-
-    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
-        MatchAny(vec![self, pattern.to_pattern()])
-    }
-
+impl<Symbol, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for PatternType {
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol> {
-        RepeatInfinite(min_count, Box::new(self))
+        RepeatInfinite(min_count, Box::new(self.into_pattern()))
     }
 
     fn repeat(self, count: Range<u32>) -> Pattern<Symbol> {
-        Repeat(count, Box::new(self))
+        Repeat(count, Box::new(self.into_pattern()))
+    }
+}
+
+impl<Symbol, PatternType: IntoPattern<Symbol>> PatternCreator<Symbol> for PatternType {
+    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
+        MatchAll(vec![self.into_pattern(), pattern.to_pattern()])
+    }
+
+    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
+        MatchAny(vec![self.into_pattern(), pattern.to_pattern()])
     }
 }
 
