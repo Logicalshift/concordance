@@ -92,6 +92,14 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
 pub trait DeterministicStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSymbol, OutputSymbol> { }
 
 ///
+/// Trait implemented by things that can be converted into a non-deterministic state machine with a specific symbol for
+/// the output state.
+///
+pub trait ToNdfa<InputSymbol> {
+    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<InputSymbol, OutputSymbol>>;
+}
+
+///
 /// Any reference to a state machine is also a state machine
 ///
 impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<StateMachine<InputSymbol, OutputSymbol>> {
