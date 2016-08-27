@@ -53,6 +53,8 @@
 use std::iter::FromIterator;
 use std::ops::Range;
 
+use super::state_machine::*;
+
 ///
 /// A Pattern represents a matching pattern in a regular language
 ///
@@ -89,6 +91,15 @@ pub enum Pattern<Symbol> {
     /// Matches any one of a set of patterns
     ///
     MatchAny(Vec<Pattern<Symbol>>)
+}
+
+impl<Symbol> Pattern<Symbol> {
+    ///
+    /// Compiles this pattern onto a state machine, returning the accepting symbol
+    ///
+    pub fn compile<OutputSymbol>(&self, state_machine: &mut MutableStateMachine<Symbol, OutputSymbol>, start_state: StateId) -> StateId {
+        unimplemented!()
+    }
 }
 
 pub use Pattern::*;
