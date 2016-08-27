@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn can_create_state_1() {
-        let ndfa: Ndfa<u32, u32> = Ndfa::new();
+        let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
 
         ndfa.create_state(1);
 

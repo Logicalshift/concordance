@@ -143,7 +143,23 @@ impl<Symbol: Clone> Pattern<Symbol> {
             },
 
             &Repeat(ref range, ref pattern) => {
-                start_state
+                // Create a target state
+                let target_state = state_machine.count_states();
+                state_machine.create_state(target_state);
+
+                let mut repeat_state = start_state;
+
+                for repeat in 0..(range.end) {
+                    // If we've repeated at least range.start times, then we can finish the loop at this point
+                    if repeat >= range.start {
+                        state_machine.join_states(repeat_state, target_state)
+                    }
+
+                    // Compile this iteration through the repetition
+                    repeat_state = pattern.compile(state_machine, repeat_state);
+                }
+
+                target_state
             },
 
             &MatchAll(ref patterns) => {
