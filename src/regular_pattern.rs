@@ -117,7 +117,29 @@ impl<Symbol: Clone> Pattern<Symbol> {
             },
 
             &RepeatInfinite(ref count, ref pattern) => {
-                start_state
+                // Create a target state
+                let target_state = state_machine.count_states();
+                state_machine.create_state(target_state);
+
+                let mut repeat_state = start_state;
+
+                for repeat in 0..(count+2) {
+                    // The last state can also be the target state
+                    if repeat == count+1 {
+                        state_machine.join_states(repeat_state, target_state)
+                    }
+
+                    // Compile this iteration through the repetition
+                    let initial_state = repeat_state;
+                    repeat_state = pattern.compile(state_machine, repeat_state);
+
+                    // The last state needs to repeat, so turn it into a loop
+                    if repeat == count + 1 {
+                        state_machine.join_states(repeat_state, initial_state);
+                    }
+                }
+
+                target_state
             },
 
             &Repeat(ref range, ref pattern) => {
@@ -129,7 +151,7 @@ impl<Symbol: Clone> Pattern<Symbol> {
                 let mut current_state = start_state;
 
                 for pattern in patterns {
-                    let next_state = self.compile(state_machine, current_state);
+                    let next_state = pattern.compile(state_machine, current_state);
                     current_state = next_state;
                 }
 
@@ -142,7 +164,7 @@ impl<Symbol: Clone> Pattern<Symbol> {
                 state_machine.create_state(target_state);
 
                 for pattern in patterns {
-                    let final_state = self.compile(state_machine, start_state);
+                    let final_state = pattern.compile(state_machine, start_state);
                     state_machine.join_states(final_state, target_state);
                 }
 
