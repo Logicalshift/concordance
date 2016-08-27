@@ -53,11 +53,6 @@ pub enum Pattern<Symbol> {
     Repeat(Range<u32>, Box<Pattern<Symbol>>),
 
     ///
-    /// Matches 0 or 1 instances of a pattern
-    ///
-    Optional(Box<Pattern<Symbol>>),
-
-    ///
     /// Matches a set of sub-patterns in order
     ///
     And(Vec<Pattern<Symbol>>),
