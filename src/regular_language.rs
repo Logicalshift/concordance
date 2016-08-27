@@ -27,39 +27,43 @@ use std::slice::*;
 ///
 /// A phrase iterator can be used to return the symbols in a phrase one at a time
 ///
-trait PhraseIterator<'a, Symbol> {
+pub trait PhraseIterator<Symbol> {
     fn next_symbol(&mut self) -> Option<&Symbol>;
 }
 
 ///
 /// Phrases are sequences of symbols, matched in order
 ///
-trait Phrase<Symbol> {
+pub trait Phrase<Symbol> {
+    type PhraseIterator: PhraseIterator<Symbol>;
+
     ///
     /// Retrieves an iterator that can be used to read the symbols for this phrase
     ///
-    fn get_symbols<'a>(&self) -> PhraseIterator<'a, Symbol>;
+    fn get_symbols(self) -> Self::PhraseIterator;
 }
 
-impl<Symbol> Phrase<Symbol> for Vec<Symbol> {
+impl<'a, Symbol> Phrase<Symbol> for &'a Vec<Symbol> {
+    type PhraseIterator = Iter<'a, Symbol>;
+
     #[inline]
-    fn get_symbols<'a>(&self) -> PhraseIterator<'a, Symbol> {
+    fn get_symbols(self) -> Self::PhraseIterator {
         self.iter()
     }
 }
 
-impl<'a, Symbol> PhraseIterator<'a, Symbol> for Iter<'a, Symbol> {
+impl<'a, Symbol> PhraseIterator<Symbol> for Iter<'a, Symbol> {
     #[inline]
     fn next_symbol(&mut self) -> Option<&Symbol> {
         self.next()
     }
 }
 
-/*
-impl<Symbol> Phrase<Symbol> for [Symbol] {
+impl<'a, Symbol> Phrase<Symbol> for &'a [Symbol] {
+    type PhraseIterator = Iter<'a, Symbol>;
+
     #[inline]
-    fn get_symbols(&self) -> Iterator<Item=Symbol> {
+    fn get_symbols(self) -> Self::PhraseIterator {
         self.iter()
     }
 }
-*/
