@@ -75,9 +75,35 @@ pub trait ToPattern<Symbol> {
     fn to_pattern(&self) -> Pattern<Symbol>;
 }
 
-impl<Symbol: Clone> ToPattern<Symbol> for Pattern<Symbol> {
-    // TODO: avoid cloning the pattern if we can?
+///
+/// Implemented by things that can be converted into a pattern
+///
+pub trait IntoPattern<Symbol> {
+    ///
+    /// Converts a particular object into a pattern that will match it
+    ///
+    fn into_pattern(self) -> Pattern<Symbol>;
+}
 
+impl<Symbol> IntoPattern<Symbol> for Pattern<Symbol> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        self
+    }
+}
+
+impl<Symbol> IntoPattern<Symbol> for Box<Pattern<Symbol>> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        *self
+    }
+}
+
+impl<'a, Symbol> IntoPattern<Symbol> for &'a ToPattern<Symbol> {
+    fn into_pattern(self) -> Pattern<Symbol> {
+        self.to_pattern()
+    }
+}
+
+impl<Symbol: Clone> ToPattern<Symbol> for Pattern<Symbol> {
     fn to_pattern(&self) -> Pattern<Symbol> {
         self.clone()
     }
