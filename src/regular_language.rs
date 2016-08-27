@@ -171,12 +171,12 @@ pub trait PatternTransformer<Symbol> {
 ///
 /// Implemented by things that combine patterns together to create new patterns
 ///
-pub trait PatternCreator<Symbol> {
+pub trait PatternCombiner<Symbol, SecondPattern: IntoPattern<Symbol>> {
     /// Appends a pattern to this one
-    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
+    fn append(self, pattern: SecondPattern) -> Pattern<Symbol>;
 
     /// Matches either this pattern or the specified pattern
-    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
+    fn or(self, pattern: SecondPattern) -> Pattern<Symbol>;
 }
 
 impl<Symbol> Pattern<Symbol> {
@@ -193,13 +193,13 @@ impl<Symbol, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for Pa
     }
 }
 
-impl<Symbol, PatternType: IntoPattern<Symbol>> PatternCreator<Symbol> for PatternType {
-    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
-        MatchAll(vec![self.into_pattern(), pattern.to_pattern()])
+impl<Symbol, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPattern<Symbol>> PatternCombiner<Symbol, SecondPatternType> for PatternType {
+    fn append(self, pattern: SecondPatternType) -> Pattern<Symbol> {
+        MatchAll(vec![self.into_pattern(), pattern.into_pattern()])
     }
 
-    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
-        MatchAny(vec![self.into_pattern(), pattern.to_pattern()])
+    fn or(self, pattern: SecondPatternType) -> Pattern<Symbol> {
+        MatchAny(vec![self.into_pattern(), pattern.into_pattern()])
     }
 }
 
@@ -244,7 +244,7 @@ mod test {
 
     #[test]
     fn can_append_pattern() {
-        let pattern = "abc".append(&"def".into_pattern());
+        let pattern = "abc".append("def");
 
         assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
         //assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c', 'd', 'e', 'f'])]));
@@ -252,7 +252,7 @@ mod test {
 
     #[test]
     fn can_or_pattern() {
-        let pattern = "abc".or(&"def".into_pattern());
+        let pattern = "abc".or("def");
 
         assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
     }
