@@ -58,16 +58,16 @@ impl<'a, Symbol> PhraseIterator<'a, Symbol> for Iter<'a, Symbol> {
     }
 }
 
-/*
-impl<'a, Symbol> Phrase<Symbol> for &'a [Symbol] {
+impl<'a, Symbol: 'a> Phrase<'a, Symbol> for [Symbol] {
     type PhraseIterator = Iter<'a, Symbol>;
 
     #[inline]
-    fn get_symbols(self) -> Self::PhraseIterator {
+    fn get_symbols(&'a self) -> Self::PhraseIterator {
         self.iter()
     }
 }
 
+/*
 impl<'a> Phrase<char> for &'a str {
     type PhraseIterator = StringPhraseIterator;
 
@@ -117,18 +117,18 @@ mod tests {
         assert!(iterator.next_symbol() == None);
     }
 
-    /*
     #[test]
     fn can_iterate_array_phrase() {
         let some_phrase     = [1, 2, 3];
         let mut iterator    = some_phrase.get_symbols();
 
-        assert!(iterator.next_symbol() == Some(&1));
-        assert!(iterator.next_symbol() == Some(&2));
-        assert!(iterator.next_symbol() == Some(&3));
+        assert!(Some(&1) == iterator.next_symbol());
+        assert!(Some(&2) == iterator.next_symbol());
+        assert!(Some(&3) == iterator.next_symbol());
         assert!(iterator.next_symbol() == None);
     }
 
+    /*
     #[test]
     fn can_iterate_string_phrase() {
         let some_phrase     = "ABC";
