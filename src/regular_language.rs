@@ -28,7 +28,7 @@ use std::ops::Range;
 ///
 /// A Pattern represents a matching pattern in a regular language
 ///
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Pattern<Symbol> {
     ///
     /// Matches nothing
@@ -75,7 +75,7 @@ pub trait IntoPattern<Symbol> {
     fn into_pattern(self) -> Pattern<Symbol>;
 }
 
-impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>> IntoPattern<Symbol> for &'a Phrase<Symbol, PhraseIterator=Iterator> {
+impl<'a, Symbol: Clone, Iterator: PhraseIterator<Symbol>, PhraseType: Phrase<Symbol, PhraseIterator=Iterator>> IntoPattern<Symbol> for PhraseType {
     ///
     /// Phrases can be turned into a literal matching pattern
     ///
@@ -101,6 +101,13 @@ impl<Symbol> Pattern<Symbol> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn can_convert_array_to_pattern() {
+        let pattern = [0, 1, 2].into_pattern();
+
+        assert!(pattern == Match(vec![0, 1, 2]));
+    }
 
     #[test]
     fn can_convert_string_to_pattern() {
