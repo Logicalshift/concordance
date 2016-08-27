@@ -86,48 +86,70 @@ pub trait IntoPattern<Symbol> {
 }
 
 impl<Symbol> IntoPattern<Symbol> for Pattern<Symbol> {
+    #[inline]
     fn into_pattern(self) -> Pattern<Symbol> {
         self
     }
 }
 
 impl<Symbol> IntoPattern<Symbol> for Box<Pattern<Symbol>> {
+    #[inline]
     fn into_pattern(self) -> Pattern<Symbol> {
         *self
     }
 }
 
-impl<'a, Symbol, PatternType: ToPattern<Symbol>> IntoPattern<Symbol> for &'a PatternType {
+impl<'a, Symbol: Clone, PatternType: ToPattern<Symbol>> IntoPattern<Symbol> for &'a PatternType {
+    #[inline]
     fn into_pattern(self) -> Pattern<Symbol> {
         self.to_pattern()
     }
 }
 
+impl<'a, Symbol: Clone> IntoPattern<Symbol> for &'a [Symbol] {
+    #[inline]
+    fn into_pattern(self) -> Pattern<Symbol> {
+        self.to_pattern()
+    }
+}
+
+impl<'a> IntoPattern<char> for &'a str {
+    #[inline]
+    fn into_pattern(self) -> Pattern<char> {
+        self.to_pattern()
+    }
+}
+
 impl<Symbol: Clone> ToPattern<Symbol> for Pattern<Symbol> {
+    #[inline]
     fn to_pattern(&self) -> Pattern<Symbol> {
         self.clone()
     }
 }
 
 impl<Symbol: Clone> ToPattern<Symbol> for Box<Pattern<Symbol>> {
+    #[inline]
     fn to_pattern(&self) -> Pattern<Symbol> {
         (**self).clone()
     }
 }
 
 impl<Symbol: Clone> ToPattern<Symbol> for Vec<Symbol> {
+    #[inline]
     fn to_pattern(&self) -> Pattern<Symbol> {
         Match(self.clone())
     }
 }
 
 impl<Symbol: Clone> ToPattern<Symbol> for [Symbol] {
+    #[inline]
     fn to_pattern(&self) -> Pattern<Symbol> {
         Match(self.to_vec())
     }
 }
 
 impl ToPattern<char> for str {
+    #[inline]
     fn to_pattern(&self) -> Pattern<char> {
         Match(Vec::from_iter(self.chars()))
     }
@@ -194,14 +216,14 @@ mod test {
 
     #[test]
     fn can_convert_array_to_pattern() {
-        let pattern = [0, 1, 2].to_pattern();
+        let pattern = [0, 1, 2].into_pattern();
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
 
     #[test]
     fn can_convert_string_to_pattern() {
-        let pattern = "abc".to_pattern();
+        let pattern = "abc".into_pattern();
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
