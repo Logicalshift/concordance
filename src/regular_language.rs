@@ -17,9 +17,36 @@
 //!
 //! # Regular language
 //!
-//! This provides a data structure representing a regular language. This is a more generalised form of a regular
-//! expression (it supports symbol types other than simple strings). A regular language using the `u8` symbol forms
-//! a simple regular expression.
+//! This provides a data structure, `Pattern<Symbol>` representing a regular language. This is a more generalised form 
+//! of a regular expression (it supports symbol types other than simple strings). A pattern using the `char` symbol
+//! forms a simple regular expression.
+//!
+//! Regular patterns can be created from strings, arrays or vectors using `into_pattern`, and can use any cloneable type
+//! to represent a symbol:
+//!
+//! ```
+//! # use ndfa::*;
+//! let match_abc = "abc".into_pattern();
+//! let match_123 = [1,2,3].into_pattern();
+//! ```
+//!
+//! These patterns are quite boring (they just match exactly the string that's passed in). To create more interesting
+//! patterns, there are a series of functions that will create patterns with repetitions or other constructs in them:
+//!
+//! ```
+//! # use ndfa::*;
+//! let stuff_or_nonsense = "stuff".or("nonsense");
+//! let any_amount_of_stuff = "stuff".repeat_forever(1);
+//! let went_to_market = "piggies".repeat(0..10);
+//! ```
+//!
+//! For convenience, these methods will work on any type that can be converted into a pattern. Every regular expression
+//! can be converted into a regular pattern, but these patterns are also for symbol types other than characters.
+//!
+//! ```
+//! # use ndfa::*;
+//! let some_counting = vec![1, 2, 3].repeat_forever(1);
+//! ```
 //!
 
 use std::iter::FromIterator;
