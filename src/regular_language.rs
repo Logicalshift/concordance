@@ -76,6 +76,8 @@ pub trait ToPattern<Symbol> {
 }
 
 impl<Symbol: Clone> ToPattern<Symbol> for Pattern<Symbol> {
+    // TODO: avoid cloning the pattern if we can?
+
     fn to_pattern(&self) -> Pattern<Symbol> {
         self.clone()
     }
@@ -115,7 +117,10 @@ pub trait PatternBuilder<Symbol> {
     fn empty() -> Pattern<Symbol>;
 
     /// Appends a pattern to this one
-    fn append(self, pattern: ToPattern<Symbol>) -> Pattern<Symbol>;
+    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
+
+    /// Matches either this pattern or the specified pattern
+    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol>;
 
     /// Repeats the current pattern forever
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol>;
@@ -126,6 +131,28 @@ pub trait PatternBuilder<Symbol> {
 
 impl<Symbol> Pattern<Symbol> {
 
+}
+
+impl<Symbol> PatternBuilder<Symbol> for Pattern<Symbol> {
+    fn empty() -> Pattern<Symbol> { 
+        Epsilon
+    }
+
+    fn append(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
+        MatchAll(vec![self, pattern.to_pattern()])
+    }
+
+    fn or(self, pattern: &ToPattern<Symbol>) -> Pattern<Symbol> {
+        MatchAny(vec![self, pattern.to_pattern()])
+    }
+
+    fn repeat_forever(self, min_count: u32) -> Pattern<Symbol> {
+        RepeatInfinite(min_count, Box::new(self))
+    }
+
+    fn repeat(self, count: Range<u32>) -> Pattern<Symbol> {
+        Repeat(count, Box::new(self))
+    }
 }
 
 #[cfg(test)]
