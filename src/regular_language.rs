@@ -67,3 +67,30 @@ impl<'a, Symbol> Phrase<Symbol> for &'a [Symbol] {
         self.iter()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_iterate_vector_phrase() {
+        let some_phrase     = vec![1, 2, 3];
+        let mut iterator    = some_phrase.get_symbols();
+
+        assert!(iterator.next_symbol() == Some(&1));
+        assert!(iterator.next_symbol() == Some(&2));
+        assert!(iterator.next_symbol() == Some(&3));
+        assert!(iterator.next_symbol() == None);
+    }
+
+    #[test]
+    fn can_iterate_array_phrase() {
+        let some_phrase     = [1, 2, 3];
+        let mut iterator    = some_phrase.get_symbols();
+
+        assert!(iterator.next_symbol() == Some(&1));
+        assert!(iterator.next_symbol() == Some(&2));
+        assert!(iterator.next_symbol() == Some(&3));
+        assert!(iterator.next_symbol() == None);
+    }
+}
