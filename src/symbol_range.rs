@@ -24,6 +24,21 @@
 //!
 
 ///
+/// Trait implemented by symbol types that are countable - ie, for types where there's always a next symbol
+///
+pub trait Countable<Symbol> {
+    ///
+    /// Returns the next symbol in order (None if this is the last symbol)
+    ///
+    fn next(&self) -> Option<Symbol>;
+
+    ///
+    /// Returns the next symbol in order (None if this is the last symbol)
+    ///
+    fn prev(&self) -> Option<Symbol>;
+}
+
+///
 /// Represents a range of symbols
 ///
 /// Symbols must be ordered in order to use them with a range-based state machine.
