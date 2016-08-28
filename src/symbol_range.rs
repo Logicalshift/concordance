@@ -26,16 +26,16 @@
 ///
 /// Trait implemented by symbol types that are countable - ie, for types where there's always a next symbol
 ///
-pub trait Countable<Symbol> {
+pub trait Countable where Self: Sized {
     ///
     /// Returns the next symbol in order (None if this is the last symbol)
     ///
-    fn next(&self) -> Option<Symbol>;
+    fn next(&self) -> Option<Self>;
 
     ///
     /// Returns the next symbol in order (None if this is the last symbol)
     ///
-    fn prev(&self) -> Option<Symbol>;
+    fn prev(&self) -> Option<Self>;
 }
 
 ///
@@ -69,6 +69,24 @@ impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
             SymbolRange { lowest: highest, highest: lowest }
         } else {
             SymbolRange { lowest: lowest, highest: highest }
+        }
+    }
+}
+
+impl Countable for u8 {
+    fn next(&self) -> Option<u8> {
+        if *self == u8::max_value() {
+            None
+        } else {
+            Some(self+1)
+        }
+    }
+
+    fn prev(&self) -> Option<u8> {
+        if *self == u8::min_value() {
+            None
+        } else {
+            Some(self-1)
         }
     }
 }
