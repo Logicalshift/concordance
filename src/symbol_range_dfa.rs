@@ -91,7 +91,7 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
 ///
 /// A state of a symbol range state machine
 ///
-pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> {
+pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
     // The current state of the state machine
     state: StateId,
 
@@ -105,7 +105,7 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+
     state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
 
     fn start(&'a self) -> Self::State {
@@ -114,7 +114,7 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<'a, 
     }
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<'a, InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> MatchingState<'a, InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
     fn next(self, symbol: InputSymbol) -> MatchAction<'a, OutputSymbol, Self> {
         // The transition range is defined by the current state
         let start_transition    = self.state_machine.states[self.state as usize];
@@ -169,7 +169,7 @@ mod test {
 
     #[test]
     fn can_accept_single_symbol() {
-        let mut builder: SymbolRangeDfaBuilder<i32, i32> = SymbolRangeDfaBuilder::new();
+        let mut builder = SymbolRangeDfaBuilder::new();
 
         // State 0: '0', move to state 1
         builder.start_state();
@@ -177,7 +177,7 @@ mod test {
 
         // State 1: accept, output symbol "Success"
         builder.start_state();
-        builder.accept(3);
+        builder.accept("Success");
 
         // Create the state machine  
         let state_machine = builder.build();
@@ -195,7 +195,7 @@ mod test {
                 assert!(count == 1);
 
                 // Output symbol correct
-                assert!(symbol == &3);
+                assert!(symbol == &"Success");
             } else {
                 // Should have accepted here (the second '0' is rejected)
                 assert!(false);
