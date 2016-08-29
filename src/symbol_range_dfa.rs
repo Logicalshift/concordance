@@ -88,6 +88,43 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
     }
 }
 
+impl<InputSymbol: PartialOrd+Clone, OutputSymbol> StateMachine<SymbolRange<InputSymbol>, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+    ///
+    /// Returns the number of states in this state machine
+    ///
+    /// Note that if state x exists then state x-1 is also expected to exist provided x > 0. This means that this returns the
+    /// first unused state in this state machine.
+    ///
+    fn count_states(&self) -> StateId {
+        (self.states.len()-1) as StateId
+    }
+
+    ///
+    /// Returns the transitions for a particular symbol 
+    ///
+    fn get_transitions_for_state(&self, state: StateId) -> Vec<(SymbolRange<InputSymbol>, StateId)> {
+        let mut result = vec![];
+
+        let start_index = self.states[state as usize];
+        let end_index   = self.states[(state+1) as usize];
+
+        for transit_index in start_index..end_index {
+            let (ref range, target_state) = self.transitions[transit_index];
+
+            result.push((range.clone(), target_state));
+        }
+
+        result
+    }
+
+    ///
+    /// If a state is an accepting state, then this returns the output symbol that should be produced if this is the longest match
+    ///
+    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
+        self.accept[state as usize].as_ref()
+    }
+}
+
 ///
 /// A state of a symbol range state machine
 ///
@@ -166,7 +203,29 @@ mod test {
     use super::super::dfa_builder::*;
     use super::super::symbol_range::*;
     use super::super::pattern_matcher::*;
+    use super::super::state_machine::*;
     use super::*;
+
+    #[test]
+    fn can_build_state_machine() {
+        let mut builder = SymbolRangeDfaBuilder::new();
+
+        // State 0: '0', move to state 1
+        builder.start_state();
+        builder.transition(SymbolRange::new(0, 0), 1);
+
+        // State 1: accept, output symbol "Success"
+        builder.start_state();
+        builder.accept("Success");
+
+        // Create the state machine  
+        let state_machine = builder.build();
+
+        assert!(state_machine.count_states() == 2);
+        assert!(state_machine.output_symbol_for_state(0) == None);
+        assert!(state_machine.output_symbol_for_state(1) == Some(&"Success"));
+        assert!(state_machine.get_transitions_for_state(0) == vec![(SymbolRange::new(0,0), 1)]);
+    }
 
     #[test]
     fn can_accept_single_symbol() {
