@@ -28,6 +28,7 @@ pub use self::ndfa::*;
 pub use self::regular_pattern::*;
 pub use self::dfa_builder::*;
 pub use self::symbol_range_dfa::*;
+pub use self::symbol_reader::*;
 
 pub mod symbol_range;
 pub mod state_machine;
@@ -37,3 +38,4 @@ pub mod ndfa;
 pub mod regular_pattern;
 pub mod dfa_builder;
 pub mod symbol_range_dfa;
+pub mod symbol_reader;
