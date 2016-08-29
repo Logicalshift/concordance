@@ -105,10 +105,10 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+
     state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for &'a SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
 
-    fn start(&self) -> Self::State {
+    fn start(&'a self) -> Self::State {
         // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
         SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self }
     }
@@ -156,6 +156,53 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<'a, I
         } else {
             // No accepting state was found while this state machine was running
             Reject
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::dfa_builder::*;
+    use super::super::symbol_range::*;
+    use super::super::pattern_matcher::*;
+    use super::*;
+
+    #[test]
+    fn can_accept_single_symbol() {
+        let mut builder: SymbolRangeDfaBuilder<i32, i32> = SymbolRangeDfaBuilder::new();
+
+        // State 0: '0', move to state 1
+        builder.start_state();
+        builder.transition(SymbolRange::new(0, 0), 1);
+
+        // State 1: accept, output symbol "Success"
+        builder.start_state();
+        builder.accept(3);
+
+        // Create the state machine  
+        let state_machine = builder.build();
+
+        // Run the first state
+        let start_state = state_machine.start();
+        let mut action  = start_state.next(0);
+
+        if let More(next_state) = action {
+            action = next_state.next(0);
+
+            // Should have reached an accepting state (read one character)
+            if let Accept(count, symbol) = action {
+                // One symbol accepted
+                assert!(count == 1);
+
+                // Output symbol correct
+                assert!(symbol == &3);
+            } else {
+                // Should have accepted here (the second '0' is rejected)
+                assert!(false);
+            }
+        } else {
+            // State machine did not accept the character
+            assert!(false);
         }
     }
 }

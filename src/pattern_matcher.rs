@@ -33,7 +33,7 @@ pub trait PatternMatcher<'a, InputSymbol, OutputSymbol> {
     ///
     /// Creates a state that begins matching this pattern
     ///
-    fn start(&self) -> Self::State;
+    fn start(&'a self) -> Self::State;
 }
 
 ///
