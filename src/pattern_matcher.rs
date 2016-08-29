@@ -53,7 +53,7 @@ pub enum MatchAction<'a, OutputSymbol: 'a, State: ?Sized> {
     /// The pattern matched a certain number of symbols (which may be fewer than were passed to the matcher)
     Accept(usize, &'a OutputSymbol),
 
-    /// The matcher needs more symbols to decide if the pattern matches
+    /// The matcher needs more symbols to decide if the pattern matches and has entered a new state
     More(State)
 }
 
