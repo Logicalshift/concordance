@@ -54,6 +54,7 @@ use std::iter::FromIterator;
 use std::ops::Range;
 
 use super::state_machine::*;
+use super::symbol_range::*;
 use super::ndfa::*;
 
 ///
@@ -94,11 +95,11 @@ pub enum Pattern<Symbol: Clone> {
     MatchAny(Vec<Pattern<Symbol>>)
 }
 
-impl<Symbol: Clone> Pattern<Symbol> {
+impl<Symbol: Clone+PartialOrd> Pattern<Symbol> {
     ///
     /// Compiles this pattern onto a state machine, returning the accepting symbol
     ///
-    pub fn compile<OutputSymbol>(&self, state_machine: &mut MutableStateMachine<Symbol, OutputSymbol>, start_state: StateId) -> StateId {
+    pub fn compile<OutputSymbol>(&self, state_machine: &mut MutableStateMachine<SymbolRange<Symbol>, OutputSymbol>, start_state: StateId) -> StateId {
         match self {
             &Epsilon => {
                 start_state
@@ -110,7 +111,7 @@ impl<Symbol: Clone> Pattern<Symbol> {
 
                 for sym in symbols {
                     let next_state = state_machine.count_states();
-                    state_machine.add_transition(current_state, sym.clone(), next_state);
+                    state_machine.add_transition(current_state, SymbolRange::new(sym.clone(), sym.clone()), next_state);
                     current_state = next_state;
                 }
 
@@ -191,8 +192,8 @@ impl<Symbol: Clone> Pattern<Symbol> {
     }
 }
 
-impl<Symbol: Clone+'static> ToNdfa<Symbol> for Pattern<Symbol> {
-    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+impl<Symbol: Clone+PartialOrd+'static> ToNdfa<SymbolRange<Symbol>> for Pattern<Symbol> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         let mut result  = Ndfa::new();
         let end_state   = self.compile(&mut result, 0);
 
@@ -202,20 +203,20 @@ impl<Symbol: Clone+'static> ToNdfa<Symbol> for Pattern<Symbol> {
     }
 }
 
-impl<Symbol: Clone+'static> ToNdfa<Symbol> for ToPattern<Symbol> {
-    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+impl<Symbol: Clone+PartialOrd+'static> ToNdfa<SymbolRange<Symbol>> for ToPattern<Symbol> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
 
-impl ToNdfa<char> for str {
-    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<char, OutputSymbol>> {
+impl ToNdfa<SymbolRange<char>> for str {
+    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<char>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
 
-impl<Symbol: Clone+'static> ToNdfa<Symbol> for [Symbol] {
-    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<Symbol, OutputSymbol>> {
+impl<Symbol: Clone+PartialOrd+'static> ToNdfa<SymbolRange<Symbol>> for [Symbol] {
+    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
