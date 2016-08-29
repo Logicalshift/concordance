@@ -91,6 +91,7 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
 ///
 /// A state of a symbol range state machine
 ///
+#[derive(Clone)]
 pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
     // The current state of the state machine
     state: StateId,
