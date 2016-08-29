@@ -23,6 +23,8 @@
 //! symbol ranges.
 //!
 
+use std::cmp::*;
+
 ///
 /// Represents a range of symbols
 ///
@@ -31,7 +33,7 @@
 /// except the last one'.
 ///
 #[derive(Clone, Eq, PartialEq)]
-pub struct SymbolRange<Symbol: PartialOrd+Clone> {
+pub struct SymbolRange<Symbol: PartialOrd> {
     ///
     /// Lowest symbol in the range
     ///
@@ -46,7 +48,19 @@ pub struct SymbolRange<Symbol: PartialOrd+Clone> {
     pub highest: Symbol
 }
 
-impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
+impl<Symbol: PartialOrd> PartialOrd for SymbolRange<Symbol> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let lower = self.lowest.partial_cmp(&other.lowest);
+
+        if lower == Some(Ordering::Equal) {
+            self.highest.partial_cmp(&other.highest)
+        } else {
+            lower
+        }
+    }
+}
+
+impl<Symbol: PartialOrd> SymbolRange<Symbol> {
     ///
     /// Creates a new range covering everything between the specified two symbols
     ///
@@ -56,19 +70,6 @@ impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
             SymbolRange { lowest: highest, highest: lowest }
         } else {
             SymbolRange { lowest: lowest, highest: highest }
-        }
-    }
-
-    ///
-    /// Joins this range with another
-    ///
-    /// This creates a new range that covers all the symbols of both. If `overlaps()` is false for these two ranges, then
-    /// the new range may cover additional symbols that are not in either range.
-    ///
-    pub fn join(&self, with: &SymbolRange<Symbol>) -> SymbolRange<Symbol> {
-        SymbolRange { 
-            lowest:  if with.lowest<self.lowest   { with.lowest.clone()  } else { self.lowest.clone()  },
-            highest: if with.highest<self.highest { self.highest.clone() } else { with.highest.clone() }
         }
     }
 
@@ -83,6 +84,21 @@ impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
             false
         } else {
             true
+        }
+    }
+}
+
+impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
+    ///
+    /// Joins this range with another
+    ///
+    /// This creates a new range that covers all the symbols of both. If `overlaps()` is false for these two ranges, then
+    /// the new range may cover additional symbols that are not in either range.
+    ///
+    pub fn join(&self, with: &SymbolRange<Symbol>) -> SymbolRange<Symbol> {
+        SymbolRange { 
+            lowest:  if with.lowest<self.lowest   { with.lowest.clone()  } else { self.lowest.clone()  },
+            highest: if with.highest<self.highest { self.highest.clone() } else { with.highest.clone() }
         }
     }
 }
