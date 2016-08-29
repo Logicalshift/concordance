@@ -73,6 +73,19 @@ impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
     }
 
     ///
+    /// Joins this range with another
+    ///
+    /// This creates a new range that covers all the symbols of both. If `overlaps()` is false for these two ranges, then
+    /// the new range may cover additional symbols that are not in either range.
+    ///
+    pub fn join(&self, with: &SymbolRange<Symbol>) -> SymbolRange<Symbol> {
+        SymbolRange { 
+            lowest:  if with.lowest<self.lowest   { with.lowest.clone()  } else { self.lowest.clone()  },
+            highest: if with.highest<self.highest { self.highest.clone() } else { with.highest.clone() }
+        }
+    }
+
+    ///
     /// True if this range overlaps another
     ///
     #[inline]
@@ -158,5 +171,29 @@ mod tests {
     #[test]
     fn does_not_overlap_higher() {
         assert!(!SymbolRange::new(4, 5).overlaps(&SymbolRange::new(1, 2)));
+    }
+
+    #[test]
+    fn join_left() {
+        let joined = SymbolRange::new(1, 3).join(&SymbolRange::new(3, 4));
+
+        assert!(joined.lowest == 1);
+        assert!(joined.highest == 4);
+    }
+
+    #[test]
+    fn join_right() {
+        let joined = SymbolRange::new(3, 4).join(&SymbolRange::new(1, 3));
+
+        assert!(joined.lowest == 1);
+        assert!(joined.highest == 4);
+    }
+
+    #[test]
+    fn join_overlap() {
+        let joined = SymbolRange::new(1, 4).join(&SymbolRange::new(2, 3));
+
+        assert!(joined.lowest == 1);
+        assert!(joined.highest == 4);
     }
 }
