@@ -27,6 +27,5 @@
 /// Matcher that can read an input stream of type `Symbol` and find the longest matching pattern, which it will identify using
 /// `OutputSymbol`
 ///
-pub trait Matcher<InputSymbol, OutputSymbol> {
-
+pub trait PatternMatcher<InputSymbol, OutputSymbol> {
 }

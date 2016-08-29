@@ -21,7 +21,7 @@
 //!
 
 use super::dfa_builder::*;
-use super::matcher::*;
+use super::pattern_matcher::*;
 use super::symbol_range::*;
 use super::state_machine::*;
 
@@ -45,7 +45,7 @@ pub struct SymbolRangeDfa<InputSymbol: PartialOrd, OutputSymbol> {
     accept: Vec<Option<OutputSymbol>>
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol> Matcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<InputSymbol: PartialOrd, OutputSymbol> PatternMatcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
 
 }
 
