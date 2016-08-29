@@ -26,7 +26,9 @@
 ///
 /// Represents a range of symbols
 ///
-/// Symbols must be ordered in order to use them with a range-based state machine.
+/// Symbols must be ordered in order to use them with a range-based state machine. Symbol ranges are inclusive unlike standard
+/// Rust ranges - this allows them to represent the entire range of symbols instead of having a maximum coverage of 'all symbols 
+/// except the last one'.
 ///
 #[derive(Clone, Eq, PartialEq)]
 pub struct SymbolRange<Symbol: PartialOrd+Clone> {

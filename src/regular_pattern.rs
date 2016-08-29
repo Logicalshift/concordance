@@ -73,6 +73,14 @@ pub enum Pattern<Symbol: Clone> {
     Match(Vec<Symbol>),
 
     ///
+    /// Matches a range of symbols
+    ///
+    /// Note that this is inclusive, so both the start and end symbols will be matched as well as any in between. Inclusive ranges allow
+    /// the entire range of symbols to be matched (unlike exclusive ranges, which have to exclude at least one symbol by definition)
+    ///
+    MatchRange(Symbol, Symbol),
+
+    ///
     /// Matches at least a particular number of repetitions of a pattern
     ///
     /// `RepeatInfinite(0, X)` is the equivalent of the regular expression `X*`, `RepeatInfinite(1, X)` is the equivalent of the regular expression `X+`
@@ -116,6 +124,12 @@ impl<Symbol: Clone+PartialOrd> Pattern<Symbol> {
                 }
 
                 current_state
+            },
+
+            &MatchRange(ref first, ref last) => {
+                let next_state = state_machine.count_states();
+                state_machine.add_transition(start_state, SymbolRange::new(first.clone(), last.clone()), next_state);
+                next_state
             },
 
             &RepeatInfinite(ref count, ref pattern) => {
@@ -423,6 +437,22 @@ mod test {
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
+
+    /* -- TODO: needs inclusive ranges to be supported
+    #[test]
+    fn can_convert_range_to_pattern() {
+        let pattern = ('a'...'z').into_pattern();
+
+        assert!(pattern == MatchRange('a', 'z'));
+    }
+
+    #[test]
+    fn can_convert_float_range_to_pattern() {
+        let pattern = (1.0...2.0).into_pattern();
+
+        assert!(pattern == MatchRange(1.0, 2.0));
+    }
+    */
 
     #[test]
     fn can_repeat_pattern() {
