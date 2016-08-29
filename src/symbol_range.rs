@@ -144,6 +144,11 @@ mod tests {
     }
 
     #[test]
+    fn overlaps_when_within_float() {
+        assert!(SymbolRange::new(1.0, 4.0).overlaps(&SymbolRange::new(2.0, 3.0)));
+    }
+
+    #[test]
     fn overlaps_when_without() {
         assert!(SymbolRange::new(2, 3).overlaps(&SymbolRange::new(1, 4)));
     }
