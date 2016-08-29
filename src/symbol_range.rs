@@ -44,7 +44,7 @@ pub trait Countable where Self: Sized {
 /// Symbols must be ordered in order to use them with a range-based state machine.
 ///
 #[derive(Clone, Eq, PartialEq)]
-pub struct SymbolRange<Symbol: Ord+Clone> {
+pub struct SymbolRange<Symbol: PartialOrd+Clone> {
     ///
     /// Lowest symbol in the range
     ///
@@ -59,7 +59,7 @@ pub struct SymbolRange<Symbol: Ord+Clone> {
     pub highest: Symbol
 }
 
-impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
+impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
     ///
     /// Creates a new range covering everything between the specified two symbols
     ///
