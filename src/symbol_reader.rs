@@ -21,6 +21,7 @@
 //!
 
 use std::slice::Iter;
+use std::io::*;
 
 ///
 /// A symbol reader reads one symbol at a time from a source
@@ -54,6 +55,38 @@ impl<'a, Symbol: Clone+'a> SymbolSource<'a, Symbol> for &'a Vec<Symbol> {
 impl<'a, Symbol: Clone+'a> SymbolReader<Symbol> for Iter<'a, Symbol> {
     fn next_symbol(&mut self) -> Option<Symbol> {
         if let Some(sym) = self.next() {
+            Some(sym.clone())
+        } else {
+            None
+        }
+    }
+}
+
+// Can read from streams
+
+/*
+impl<'a> SymbolSource<'a, u8> for Read {
+    type SymbolReader = ByteReader<Self>;
+
+    fn read_symbols(self) -> Self::SymbolReader {
+        ByteReader::new(self.bytes())
+    }
+}
+*/
+
+pub struct ByteReader<Reader: Read> {
+    bytes: Bytes<Reader>
+}
+
+impl<Reader: Read> ByteReader<Reader> {
+    pub fn new(bytes: Bytes<Reader>) -> ByteReader<Reader> {
+        ByteReader { bytes: bytes }
+    }
+}
+
+impl<Reader: Read> SymbolReader<u8> for ByteReader<Reader> {
+    fn next_symbol(&mut self) -> Option<u8> {
+        if let Some(Ok(sym)) = self.bytes.next() {
             Some(sym.clone())
         } else {
             None
