@@ -92,7 +92,7 @@ impl<Symbol: PartialOrd> SymbolRange<Symbol> {
     ///
     #[inline]
     pub fn includes(&self, symbol: &Symbol) -> bool {
-        self.lowest < *symbol && *symbol <= self.highest
+        self.lowest <= *symbol && *symbol <= self.highest
     }
 }
 
@@ -193,5 +193,40 @@ mod tests {
 
         assert!(joined.lowest == 1);
         assert!(joined.highest == 4);
+    }
+
+    #[test]
+    fn includes_single_item() {
+        let just_zero = SymbolRange::new(0,0);
+        assert!(just_zero.includes(&0));        
+    }
+
+    #[test]
+    fn includes_mid_item() {
+        let just_zero = SymbolRange::new(1,4);
+        assert!(just_zero.includes(&2));        
+    }
+
+    #[test]
+    fn includes_first_item() {
+        let just_zero = SymbolRange::new(1,4);
+        assert!(just_zero.includes(&1));        
+    }
+
+    #[test]
+    fn includes_last_item() {
+        let just_zero = SymbolRange::new(1,4);
+        assert!(just_zero.includes(&4));        
+    }
+
+    #[test]
+    fn excludes_lower_item() {
+        let just_zero = SymbolRange::new(1,4);
+        assert!(!just_zero.includes(&0));        
+    }
+    #[test]
+    fn excludes_higher_item() {
+        let just_zero = SymbolRange::new(1,4);
+        assert!(!just_zero.includes(&5));        
     }
 }
