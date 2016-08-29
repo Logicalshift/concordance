@@ -94,12 +94,6 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
 }
 
 ///
-/// Trait used to indicate that a particular state machine is deterministic (has at most one 
-/// transition per symbol from the original)
-///
-pub trait DeterministicStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSymbol, OutputSymbol> { }
-
-///
 /// Trait implemented by things that can be converted into a non-deterministic state machine with a specific symbol for
 /// the output state.
 ///
@@ -125,24 +119,4 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<S
     fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
         (**self).output_symbol_for_state(state)
     }
-}
-
-impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<DeterministicStateMachine<InputSymbol, OutputSymbol>> {
-    #[inline]
-    fn count_states(&self) -> StateId {
-        (**self).count_states()
-    }
-
-    #[inline]
-    fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
-        (**self).get_transitions_for_state(state)
-    }
-
-    #[inline]
-    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
-        (**self).output_symbol_for_state(state)
-    }
-}
-
-impl<InputSymbol, OutputSymbol> DeterministicStateMachine<InputSymbol, OutputSymbol> for Rc<DeterministicStateMachine<InputSymbol, OutputSymbol>> {
 }
