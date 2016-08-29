@@ -38,7 +38,8 @@ pub trait DfaBuilder<InputSymbol, OutputSymbol, DfaType: Matcher<InputSymbol, Ou
     ///
     /// Adds a transition to the current state
     ///
-    /// Any input symbol can appear exactly once in a state, and must not overlap any other input symbol.
+    /// Any input symbol can appear exactly once in a state, and must not overlap any other input symbol. Transitions must be in input
+    /// symbol order.
     ///
     fn transition(&mut self, symbol: InputSymbol, target_state: StateId);
 
