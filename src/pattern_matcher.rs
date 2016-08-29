@@ -27,8 +27,8 @@
 /// Matcher that can read an input stream of type `Symbol` and find the longest matching pattern, which it will identify using
 /// `OutputSymbol`
 ///
-pub trait PatternMatcher<InputSymbol, OutputSymbol> {
-    type State: MatchingState<InputSymbol, OutputSymbol>;
+pub trait PatternMatcher<'a, InputSymbol, OutputSymbol> {
+    type State: MatchingState<'a, InputSymbol, OutputSymbol>;
 
     ///
     /// Creates a state that begins matching this pattern
@@ -39,7 +39,7 @@ pub trait PatternMatcher<InputSymbol, OutputSymbol> {
 ///
 /// Action to be taken after a matcher receives a symbol
 ///
-pub enum MatchAction<OutputSymbol: ?Sized, State: ?Sized> {
+pub enum MatchAction<'a, OutputSymbol: ?Sized+'a, State: ?Sized> {
     // State is also always: MatchingState<InputSymbol, OutputSymbol> (important to know that as its how More is used)
     //
     // However, rust complains that InputSymbol is unused if we declare it in MatchAction and that it is undeclared if we don't
@@ -51,7 +51,7 @@ pub enum MatchAction<OutputSymbol: ?Sized, State: ?Sized> {
     Reject,
 
     /// The pattern matched a certain number of symbols (which may be fewer than were passed to the matcher)
-    Accept(usize, OutputSymbol),
+    Accept(usize, &'a OutputSymbol),
 
     /// The matcher needs more symbols to decide if the pattern matches
     More(State)
@@ -60,16 +60,16 @@ pub enum MatchAction<OutputSymbol: ?Sized, State: ?Sized> {
 ///
 /// Represents a state during a pattern matching operation
 ///
-pub trait MatchingState<InputSymbol, OutputSymbol: ?Sized> {
+pub trait MatchingState<'a, InputSymbol, OutputSymbol: ?Sized> {
     ///
     /// Matches the next symbol
     ///
-    fn next(self, symbol: InputSymbol) -> MatchAction<OutputSymbol, Self>;
+    fn next(self, symbol: InputSymbol) -> MatchAction<'a, OutputSymbol, Self>;
 
     ///
     /// There are no more symbols available (this can only return `Reject` or `Accept`)
     ///
-    fn finish(self) -> MatchAction<OutputSymbol, Self>;
+    fn finish(self) -> MatchAction<'a, OutputSymbol, Self>;
 }
 
 pub use MatchAction::*;

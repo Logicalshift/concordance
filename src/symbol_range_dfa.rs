@@ -101,13 +101,13 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+
     count: usize,
 
     // If something other than none, the most recent accepting state
-    accept: Option<(usize, OutputSymbol)>,
+    accept: Option<(usize, &'a OutputSymbol)>,
 
     // The state machine this is running
     state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<InputSymbol, OutputSymbol> for &'a SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for &'a SymbolRangeDfa<InputSymbol, OutputSymbol> {
     type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
 
     fn start(&self) -> Self::State {
@@ -116,8 +116,8 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<Inpu
     }
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
-    fn next(self, symbol: InputSymbol) -> MatchAction<OutputSymbol, Self> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<'a, InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
+    fn next(self, symbol: InputSymbol) -> MatchAction<'a, OutputSymbol, Self> {
         // The transition range is defined by the current state
         let start_transition    = self.state_machine.states[self.state as usize];
         let end_transition      = self.state_machine.states[self.state as usize+1];
@@ -151,7 +151,7 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<Input
         self.finish()
     }
 
-    fn finish(self) -> MatchAction<OutputSymbol, Self> {
+    fn finish(self) -> MatchAction<'a, OutputSymbol, Self> {
         if let Some(accept_state) = self.accept {
             // We found an accepting state earlier on, so return that
             let (length, symbol) = accept_state;
