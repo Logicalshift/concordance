@@ -61,7 +61,7 @@ pub struct SymbolRange<Symbol: Ord+Clone> {
 
 impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
     ///
-    /// Creates a new range covering
+    /// Creates a new range covering everything between the specified two symbols
     ///
     #[inline]
     pub fn new(lowest: Symbol, highest: Symbol) -> SymbolRange<Symbol> {
@@ -71,11 +71,25 @@ impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
             SymbolRange { lowest: lowest, highest: highest }
         }
     }
+
+    ///
+    /// True if this range overlaps another
+    ///
+    #[inline]
+    pub fn overlaps(&self, with: &SymbolRange<Symbol>) -> bool {
+        if self.highest < with.lowest {
+            false
+        } else if self.lowest > with.highest {
+            false
+        } else {
+            true
+        }
+    }
 }
 
 impl Countable for u8 {
     fn next(&self) -> Option<u8> {
-        if *self == u8::max_value() {
+        if *self == Self::max_value() {
             None
         } else {
             Some(self+1)
@@ -83,7 +97,7 @@ impl Countable for u8 {
     }
 
     fn prev(&self) -> Option<u8> {
-        if *self == u8::min_value() {
+        if *self == Self::min_value() {
             None
         } else {
             Some(self-1)
@@ -109,5 +123,40 @@ mod tests {
 
         assert!(range.lowest == 1);
         assert!(range.highest == 5);
+    }
+
+    #[test]
+    fn overlaps_when_within() {
+        assert!(SymbolRange::new(1, 4).overlaps(&SymbolRange::new(2, 3)));
+    }
+
+    #[test]
+    fn overlaps_when_without() {
+        assert!(SymbolRange::new(2, 3).overlaps(&SymbolRange::new(1, 4)));
+    }
+
+    #[test]
+    fn overlaps_when_lower() {
+        assert!(SymbolRange::new(1, 3).overlaps(&SymbolRange::new(2, 4)));
+    }
+
+    #[test]
+    fn overlaps_when_higher() {
+        assert!(SymbolRange::new(2, 4).overlaps(&SymbolRange::new(1, 3)));
+    }
+
+    #[test]
+    fn overlaps_when_same() {
+        assert!(SymbolRange::new(1, 4).overlaps(&SymbolRange::new(1, 4)));
+    }
+
+    #[test]
+    fn does_not_overlap_lower() {
+        assert!(!SymbolRange::new(1, 2).overlaps(&SymbolRange::new(4, 5)));
+    }
+
+    #[test]
+    fn does_not_overlap_higher() {
+        assert!(!SymbolRange::new(4, 5).overlaps(&SymbolRange::new(1, 2)));
     }
 }
