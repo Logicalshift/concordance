@@ -24,16 +24,6 @@
 //!
 
 ///
-/// Trait implemented by symbol types that are countable - ie, for types where there's always a next symbol
-///
-pub trait Countable where Self: Sized {
-    ///
-    /// True if the specified value is adjacent to this one
-    ///
-    fn adjacent(&self, other: &Self) -> bool;
-}
-
-///
 /// Represents a range of symbols
 ///
 /// Symbols must be ordered in order to use them with a range-based state machine.
@@ -91,18 +81,6 @@ impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
             false
         } else {
             true
-        }
-    }
-}
-
-impl Countable for u8 {
-    fn adjacent(&self, other: &Self) -> bool {
-        if *self != Self::max_value() && *self+1 == *other {
-            true
-        } else if *self != Self::min_value() && *self-1 == *other {
-            true
-        } else {
-            false
         }
     }
 }
