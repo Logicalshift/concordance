@@ -20,8 +20,6 @@
 //! A DFA that matches transitions against symbol ranges.
 //!
 
-use std::marker::PhantomData;
-
 use super::dfa_builder::*;
 use super::pattern_matcher::*;
 use super::symbol_range::*;
@@ -134,8 +132,7 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<'a, I
 
                 // If the new state is an accepting state, then remember it in case we reach a rejecting state later
                 let new_accept = if let Some(ref output) = self.state_machine.accept[new_state as usize] {
-                    // Some((new_count, output)) // output symbol can't be copied, lifetime?
-                    None
+                    Some((new_count, output))
                 } else {
                     self.accept
                 };
