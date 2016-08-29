@@ -71,3 +71,5 @@ pub trait MatchingState<InputSymbol, OutputSymbol: ?Sized> {
     ///
     fn finish(self) -> MatchAction<OutputSymbol, Self>;
 }
+
+pub use MatchAction::*;

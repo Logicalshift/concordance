@@ -20,6 +20,8 @@
 //! A DFA that matches transitions against symbol ranges.
 //!
 
+use std::marker::PhantomData;
+
 use super::dfa_builder::*;
 use super::pattern_matcher::*;
 use super::symbol_range::*;
@@ -92,15 +94,24 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
 /// A state of a symbol range state machine
 ///
 pub struct SymbolRangeState<InputSymbol: PartialOrd, OutputSymbol: Sized> {
-    foo: InputSymbol,
-    bar: OutputSymbol
+    // The current state of the state machine
+    state: StateId,
+
+    // The number of symbols that have been processed so far
+    count: usize,
+
+    // If something other than none, the most recent accepting state
+    accept: Option<(usize, OutputSymbol)>,
+
+    // Stop Rust whining about there being no fields of this type, this is used by the function definitions
+    input_symbol: PhantomData<InputSymbol>
 }
 
 impl<InputSymbol: PartialOrd, OutputSymbol: Sized> PatternMatcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     type State = SymbolRangeState<InputSymbol, OutputSymbol>;
 
     fn start(&self) -> Self::State {
-        unimplemented!()
+        SymbolRangeState { state: 0, count: 0, accept: None, input_symbol: PhantomData }
     }
 }
 
@@ -110,6 +121,11 @@ impl<InputSymbol: PartialOrd, OutputSymbol: Sized> MatchingState<InputSymbol, Ou
     }
 
     fn finish(self) -> MatchAction<OutputSymbol, Self> {
-        unimplemented!()
+        if let Some(accept_state) = self.accept {
+            let (length, symbol) = accept_state;
+            Accept(length, symbol)
+        } else {
+            Reject
+        }
     }
 }
