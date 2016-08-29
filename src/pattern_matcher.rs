@@ -39,7 +39,7 @@ pub trait PatternMatcher<'a, InputSymbol, OutputSymbol> {
 ///
 /// Action to be taken after a matcher receives a symbol
 ///
-pub enum MatchAction<'a, OutputSymbol: ?Sized+'a, State: ?Sized> {
+pub enum MatchAction<'a, OutputSymbol: 'a, State: ?Sized> {
     // State is also always: MatchingState<InputSymbol, OutputSymbol> (important to know that as its how More is used)
     //
     // However, rust complains that InputSymbol is unused if we declare it in MatchAction and that it is undeclared if we don't
@@ -60,7 +60,7 @@ pub enum MatchAction<'a, OutputSymbol: ?Sized+'a, State: ?Sized> {
 ///
 /// Represents a state during a pattern matching operation
 ///
-pub trait MatchingState<'a, InputSymbol, OutputSymbol: ?Sized> {
+pub trait MatchingState<'a, InputSymbol, OutputSymbol> {
     ///
     /// Matches the next symbol
     ///
