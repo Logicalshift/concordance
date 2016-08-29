@@ -45,10 +45,6 @@ pub struct SymbolRangeDfa<InputSymbol: PartialOrd, OutputSymbol> {
     accept: Vec<Option<OutputSymbol>>
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol> PatternMatcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
-
-}
-
 ///
 /// DFA builder that creates RangeDfas
 ///
@@ -89,5 +85,31 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
         result.states.push(result.transitions.len());
 
         result
+    }
+}
+
+///
+/// A state of a symbol range state machine
+///
+pub struct SymbolRangeState<InputSymbol: PartialOrd, OutputSymbol: Sized> {
+    foo: InputSymbol,
+    bar: OutputSymbol
+}
+
+impl<InputSymbol: PartialOrd, OutputSymbol: Sized> PatternMatcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+    type State = SymbolRangeState<InputSymbol, OutputSymbol>;
+
+    fn start(&self) -> Self::State {
+        unimplemented!()
+    }
+}
+
+impl<InputSymbol: PartialOrd, OutputSymbol: Sized> MatchingState<InputSymbol, OutputSymbol> for SymbolRangeState<InputSymbol, OutputSymbol> {
+    fn next(self, symbol: InputSymbol) -> MatchAction<OutputSymbol, Self> {
+        unimplemented!()
+    }
+
+    fn finish(self) -> MatchAction<OutputSymbol, Self> {
+        unimplemented!()
     }
 }

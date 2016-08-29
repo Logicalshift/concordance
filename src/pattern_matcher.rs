@@ -28,12 +28,12 @@
 /// `OutputSymbol`
 ///
 pub trait PatternMatcher<InputSymbol, OutputSymbol> {
-    // type State: MatchingState<InputSymbol, OutputSymbol>;
+    type State: MatchingState<InputSymbol, OutputSymbol>;
 
-    //
-    // Creates a state that begins matching this pattern
-    //
-    // fn start(&self) -> State;
+    ///
+    /// Creates a state that begins matching this pattern
+    ///
+    fn start(&self) -> Self::State;
 }
 
 ///
