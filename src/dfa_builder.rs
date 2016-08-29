@@ -21,12 +21,11 @@
 //!
 
 use super::state_machine::*;
-use super::matcher::*;
 
 ///
 /// Class that can build a particular type of DFA
 ///
-pub trait DfaBuilder<InputSymbol, OutputSymbol, DfaType: Matcher<InputSymbol, OutputSymbol>> {
+pub trait DfaBuilder<InputSymbol, OutputSymbol, DfaType> {
     ///
     /// Starts the next state for this DFA
     ///
