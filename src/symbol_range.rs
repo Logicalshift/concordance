@@ -86,6 +86,14 @@ impl<Symbol: PartialOrd> SymbolRange<Symbol> {
             true
         }
     }
+
+    ///
+    /// True if this range contains a symbol
+    ///
+    #[inline]
+    pub fn includes(&self, symbol: Symbol) -> bool {
+        self.lowest < symbol && symbol <= self.highest
+    }
 }
 
 impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
