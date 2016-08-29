@@ -93,7 +93,7 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
 ///
 /// A state of a symbol range state machine
 ///
-pub struct SymbolRangeState<InputSymbol: PartialOrd, OutputSymbol: Sized> {
+pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> {
     // The current state of the state machine
     state: StateId,
 
@@ -103,28 +103,61 @@ pub struct SymbolRangeState<InputSymbol: PartialOrd, OutputSymbol: Sized> {
     // If something other than none, the most recent accepting state
     accept: Option<(usize, OutputSymbol)>,
 
-    // Stop Rust whining about there being no fields of this type, this is used by the function definitions
-    input_symbol: PhantomData<InputSymbol>
+    // The state machine this is running
+    state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol: Sized> PatternMatcher<InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
-    type State = SymbolRangeState<InputSymbol, OutputSymbol>;
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> PatternMatcher<InputSymbol, OutputSymbol> for &'a SymbolRangeDfa<InputSymbol, OutputSymbol> {
+    type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
 
     fn start(&self) -> Self::State {
-        SymbolRangeState { state: 0, count: 0, accept: None, input_symbol: PhantomData }
+        // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
+        SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self }
     }
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol: Sized> MatchingState<InputSymbol, OutputSymbol> for SymbolRangeState<InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: Sized+'a> MatchingState<InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
     fn next(self, symbol: InputSymbol) -> MatchAction<OutputSymbol, Self> {
-        unimplemented!()
+        // The transition range is defined by the current state
+        let start_transition    = self.state_machine.states[self.state as usize];
+        let end_transition      = self.state_machine.states[self.state as usize+1];
+
+        // See if there is an input symbol matching this transition
+        // TODO: consider binary searching for states with large numbers of transitions? (Do these occur regularly in patterns that people use?)
+        for transit in start_transition..end_transition {
+            // Test this transition
+            let (ref range, new_state) = self.state_machine.transitions[transit];
+
+            if range.includes(&symbol) {
+                // Found a transition to a new state: result will be `More(new state)`
+                let new_count = self.count+1;
+
+                // If the new state is an accepting state, then remember it in case we reach a rejecting state later
+                let new_accept = if let Some(ref output) = self.state_machine.accept[new_state as usize] {
+                    // Some((new_count, output)) // output symbol can't be copied, lifetime?
+                    None
+                } else {
+                    self.accept
+                };
+
+                // Action is 'More'
+                // TODO: might be an option to return Accept or Reject here if the new state has no transitions
+                // (Possible performance advantage, but depends on the regex and input conditions)
+                return More(SymbolRangeState { state: new_state, count: new_count, accept: new_accept, state_machine: self.state_machine });
+            }
+        }
+
+        // No matches: finish the state machine
+        self.finish()
     }
 
     fn finish(self) -> MatchAction<OutputSymbol, Self> {
         if let Some(accept_state) = self.accept {
+            // We found an accepting state earlier on, so return that
             let (length, symbol) = accept_state;
             Accept(length, symbol)
         } else {
+            // No accepting state was found while this state machine was running
             Reject
         }
     }

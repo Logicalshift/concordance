@@ -91,8 +91,8 @@ impl<Symbol: PartialOrd> SymbolRange<Symbol> {
     /// True if this range contains a symbol
     ///
     #[inline]
-    pub fn includes(&self, symbol: Symbol) -> bool {
-        self.lowest < symbol && symbol <= self.highest
+    pub fn includes(&self, symbol: &Symbol) -> bool {
+        self.lowest < *symbol && *symbol <= self.highest
     }
 }
 
