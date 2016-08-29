@@ -28,14 +28,9 @@
 ///
 pub trait Countable where Self: Sized {
     ///
-    /// Returns the next symbol in order (None if this is the last symbol)
+    /// True if the specified value is adjacent to this one
     ///
-    fn next(&self) -> Option<Self>;
-
-    ///
-    /// Returns the next symbol in order (None if this is the last symbol)
-    ///
-    fn prev(&self) -> Option<Self>;
+    fn adjacent(&self, other: &Self) -> bool;
 }
 
 ///
@@ -101,19 +96,13 @@ impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
 }
 
 impl Countable for u8 {
-    fn next(&self) -> Option<u8> {
-        if *self == Self::max_value() {
-            None
+    fn adjacent(&self, other: &Self) -> bool {
+        if *self != Self::max_value() && *self+1 == *other {
+            true
+        } else if *self != Self::min_value() && *self-1 == *other {
+            true
         } else {
-            Some(self+1)
-        }
-    }
-
-    fn prev(&self) -> Option<u8> {
-        if *self == Self::min_value() {
-            None
-        } else {
-            Some(self-1)
+            false
         }
     }
 }
