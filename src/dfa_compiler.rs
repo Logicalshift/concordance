@@ -279,7 +279,7 @@ mod test {
     #[test]
     fn can_build_dfa_with_overlapping_range() {
         // Generate a state machine from the "abc" pattern
-        let ndfa     = (MatchRange('b', 'b').append("a")).or(MatchRange('b', 'b').append("b")).to_ndfa("Success");
+        let ndfa     = (MatchRange('a', 'c').append("a")).or(MatchRange('b', 'd').append("b")).to_ndfa("Success");
         let builder  = SymbolRangeDfaBuilder::new();
 
         let state_machine = DfaCompiler::build(ndfa, builder);
