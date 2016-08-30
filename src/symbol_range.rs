@@ -32,7 +32,7 @@ use std::cmp::*;
 /// Rust ranges - this allows them to represent the entire range of symbols instead of having a maximum coverage of 'all symbols 
 /// except the last one'.
 ///
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct SymbolRange<Symbol: PartialOrd> {
     ///
     /// Lowest symbol in the range
