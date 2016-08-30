@@ -74,6 +74,9 @@ impl<'a> SymbolSource<'a, u8> for Read {
 }
 */
 
+///
+/// The ByteReader turns a `std::io::Bytes` object into a symbol reader
+///
 pub struct ByteReader<Reader: Read> {
     bytes: Bytes<Reader>
 }
@@ -97,6 +100,7 @@ impl<Reader: Read> SymbolReader<u8> for ByteReader<Reader> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::io::*;
 
     #[test]
     fn can_read_from_vec() {
@@ -106,6 +110,19 @@ mod test {
         assert!(reader.next_symbol() == Some(1));
         assert!(reader.next_symbol() == Some(2));
         assert!(reader.next_symbol() == Some(3));
-        assert!(reader.next_symbol() == Nonecar);
+        assert!(reader.next_symbol() == None);
+    }
+
+    #[test]
+    fn can_read_from_bytes_reader() {
+        let array: [u8; 3] = [1, 2, 3];
+        let slice = &array[..];
+        let bytes = slice.bytes();
+        let mut reader = ByteReader::new(bytes);
+
+        assert!(reader.next_symbol() == Some(1));
+        assert!(reader.next_symbol() == Some(2));
+        assert!(reader.next_symbol() == Some(3));
+        assert!(reader.next_symbol() == None);
     }
 }
