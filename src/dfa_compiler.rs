@@ -20,31 +20,41 @@
 //! The DFA compiler converts NDFAs into DFAs, using a DFA builder.
 //!
 
+use std::marker::PhantomData;
+
 use super::dfa_builder::*;
 use super::state_machine::*;
 
 ///
 /// Builds a deterministic finite automaton from a NDFA
 ///
-pub struct DfaCompiler<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a, DfaType: 'a> {
-    //
-    // Would like to do this without the references and weird lifetime stuff. There's a bunch of limitations about what you can do
-    // when calling references to traits vs concrete types that make designing rust code very annoying. However, if you have a struct
-    // declared thusly: struct Foo<Bar, Quux: Baz<Bar>> and only use a field of type Quux then it'll moan that 'Bar' is unused, which
-    // is incorrect (it's used wherever Quux is used by definition), so you have to declare Foo<Bar> and use a reference to Baz<Bar>
-    // which means a lot of code won't work due to the whole mess around things needing to be sized.
-    //
-    // This basically means we can't declare ndfa or builder here using their real types. PhantomData also doesn't work because rust
-    // isn't smart enough to work out that if it knows the type of the state machine it also knows what InputSymbol and OutputSymbol
-    // are.
-    //
+pub struct DfaCompiler<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> {
+    ndfa: Ndfa,
+    builder: Builder,
 
-    ndfa: &'a StateMachine<InputSymbol, OutputSymbol>,
-    builder: &'a mut DfaBuilder<InputSymbol, OutputSymbol, DfaType>,
+    // Phantom data to poke Rust's type system (it's too dumb to see that InputSymbol is used in both Ndfa and Builder there via the type constraint)
+    phantom: (PhantomData<InputSymbol>, PhantomData<OutputSymbol>, PhantomData<DfaType>)
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a, DfaType: 'a> DfaCompiler<'a, InputSymbol, OutputSymbol, DfaType> {
-    pub fn new(ndfa: &'a StateMachine<InputSymbol, OutputSymbol>, builder: &'a mut DfaBuilder<InputSymbol, OutputSymbol, DfaType>) -> Self {
-        DfaCompiler { ndfa: ndfa, builder: builder }
+impl<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
+    DfaCompiler<InputSymbol, OutputSymbol, DfaType, Ndfa, Builder> {
+    pub fn new(ndfa: Ndfa, builder: Builder) -> Self {
+        DfaCompiler { ndfa: ndfa, builder: builder, phantom: (PhantomData, PhantomData, PhantomData) }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use super::super::regular_pattern::*;
+    use super::super::state_machine::*;
+    use super::super::symbol_range_dfa::*;
+
+    #[test]
+    fn create_compiler() {
+        let ndfa = "abc".into_pattern().to_ndfa("success");
+        let builder = SymbolRangeDfaBuilder::new();
+
+        let compiler = DfaCompiler::new(ndfa, builder);
     }
 }
