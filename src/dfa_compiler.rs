@@ -69,6 +69,7 @@ impl DfaState {
 
 /// Represents the transitions for a source state
 struct DfaTransitions<InputSymbol> {
+    state_id: StateId,
     transitions: Vec<(InputSymbol, DfaState)>
 }
 
@@ -133,8 +134,7 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
     /// Compiles the NDFA into a DFA
     ///
     pub fn compile(self) -> DfaType {
-        // TODO: Convert overlapping symbol ranges to non-overlapping symbol ranges
-        // This is only needed for input symbol types that implement SymbolRange
+        // We assume that input symbols are non-overlapping, which is not automatically the case for symbol ranges
 
         // Work out the state mapping for each input symbol
         let mut states: HashMap<DfaState, DfaTransitions<InputSymbol>> = HashMap::new();
@@ -143,12 +143,39 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
         // All state machines have state 0 as their starting state
         let state_zero = DfaState::create(vec![0]);
 
-        states.insert(state_zero.clone(), DfaTransitions { transitions: vec![] });
+        states.insert(state_zero.clone(), DfaTransitions { state_id: 0, transitions: vec![] });
         to_process.push(state_zero);
 
-        // Assign final IDs to the states
+        while let Some(state) = to_process.pop() {
+            // Create a new transitions object for this state
+            let mut transitions = vec![];
+
+            for source_state in &state.source_states {
+                let source_transitions = self.ndfa.get_transitions_for_state(*source_state);
+
+                for (symbol, state) in source_transitions {
+                    transitions.push((symbol, DfaState::create(vec![state])));
+                }
+            }
+
+            // Merge it so that we only have one transition per symbol
+            let mut dfa_transitions = DfaTransitions { state_id: states.len() as StateId, transitions: transitions};
+            dfa_transitions.merge_states();
+
+            // Process any generated states that are not already in the DFA
+            for &(_, ref maybe_new_state) in &dfa_transitions.transitions {
+                if !states.contains_key(maybe_new_state) {
+                    to_process.push(maybe_new_state.clone());
+                }
+            }
+
+            // Store the new state
+            states.insert(state.clone(), dfa_transitions);
+        }
 
         // TODO: Build the DFA
+
+        // TODO: output symbols
 
         unimplemented!()
     }
