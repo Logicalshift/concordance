@@ -65,39 +65,39 @@ impl<'a, Symbol: Clone+'a> SymbolReader<Symbol> for Iter<'a, Symbol> {
 // Can read from streams
 
 impl<'a> SymbolSource<'a, u8> for &'a mut Read {
-    type SymbolReader = ByteReader<Self>;
+    type SymbolReader = ByteSymbolReader<Self>;
 
     fn read_symbols(self) -> Self::SymbolReader {
-        ByteReader::new(self.bytes())
+        ByteSymbolReader::new(self.bytes())
     }
 }
 
 impl<'a> SymbolSource<'a, u8> for &'a mut BufRead {
-    type SymbolReader = ByteReader<Self>;
+    type SymbolReader = ByteSymbolReader<Self>;
 
     fn read_symbols(self) -> Self::SymbolReader {
-        ByteReader::new(self.bytes())
+        ByteSymbolReader::new(self.bytes())
     }
 }
 
 ///
-/// The ByteReader turns a `std::io::Bytes` object into a symbol reader
+/// The ByteSymbolReader turns a `std::io::Bytes` object into a symbol reader
 ///
-pub struct ByteReader<Reader: Read> {
+pub struct ByteSymbolReader<Reader: Read> {
     bytes: Bytes<Reader>
 }
 
-impl<Reader: Read> ByteReader<Reader> {
-    pub fn new(bytes: Bytes<Reader>) -> ByteReader<Reader> {
-        ByteReader { bytes: bytes }
+impl<Reader: Read> ByteSymbolReader<Reader> {
+    pub fn new(bytes: Bytes<Reader>) -> ByteSymbolReader<Reader> {
+        ByteSymbolReader { bytes: bytes }
     }
 
-    pub fn from(reader: Reader) -> ByteReader<Reader> {
+    pub fn from(reader: Reader) -> ByteSymbolReader<Reader> {
         Self::new(reader.bytes())
     }
 }
 
-impl<Reader: Read> SymbolReader<u8> for ByteReader<Reader> {
+impl<Reader: Read> SymbolReader<u8> for ByteSymbolReader<Reader> {
     fn next_symbol(&mut self) -> Option<u8> {
         if let Some(Ok(sym)) = self.bytes.next() {
             Some(sym.clone())
@@ -126,7 +126,7 @@ mod test {
     fn can_read_from_bytes_reader() {
         let array: [u8; 3] = [1, 2, 3];
         let slice = &array[..];
-        let mut reader = ByteReader::from(slice);
+        let mut reader = ByteSymbolReader::from(slice);
 
         assert!(reader.next_symbol() == Some(1));
         assert!(reader.next_symbol() == Some(2));
