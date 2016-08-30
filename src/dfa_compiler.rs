@@ -138,14 +138,14 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
 
         // Work out the state mapping for each input symbol
         let mut states       = vec![];
-        let mut known_states = HashSet::new();
+        let mut known_states = HashMap::new();
         let mut to_process   = vec![];
 
         // All state machines have state 0 as their starting state
         let state_zero = DfaState::create(vec![0]);
 
         states.push(DfaTransitions { state_id: 0, transitions: vec![] });
-        known_states.insert(state_zero.clone());
+        known_states.insert(state_zero.clone(), 0);
         to_process.push(state_zero);
 
         while let Some(state) = to_process.pop() {
@@ -166,21 +166,31 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
 
             // Process any generated states that are not already in the DFA
             for &(_, ref maybe_new_state) in &dfa_transitions.transitions {
-                if !known_states.contains(maybe_new_state) {
+                if !known_states.contains_key(maybe_new_state) {
                     to_process.push(maybe_new_state.clone());
                 }
             }
 
             // Store the new state
-            known_states.insert(state.clone());
+            known_states.insert(state.clone(), dfa_transitions.state_id);
             states.push(dfa_transitions);
         }
 
-        // TODO: Build the DFA
+        // Build the DFA
+        let mut builder = self.builder;
+
+        for dfa_state in states {
+            builder.start_state();
+
+            for (symbol, target_state) in dfa_state.transitions {
+                builder.transition(symbol, known_states[&target_state]);
+            }
+        }
 
         // TODO: output symbols
 
-        unimplemented!()
+        // Generate the final DFA
+        builder.build()
     }
 }
 
