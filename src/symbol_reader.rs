@@ -64,15 +64,21 @@ impl<'a, Symbol: Clone+'a> SymbolReader<Symbol> for Iter<'a, Symbol> {
 
 // Can read from streams
 
-/*
-impl<'a> SymbolSource<'a, u8> for Read {
+impl<'a> SymbolSource<'a, u8> for &'a mut Read {
     type SymbolReader = ByteReader<Self>;
 
     fn read_symbols(self) -> Self::SymbolReader {
         ByteReader::new(self.bytes())
     }
 }
-*/
+
+impl<'a> SymbolSource<'a, u8> for &'a mut BufRead {
+    type SymbolReader = ByteReader<Self>;
+
+    fn read_symbols(self) -> Self::SymbolReader {
+        ByteReader::new(self.bytes())
+    }
+}
 
 ///
 /// The ByteReader turns a `std::io::Bytes` object into a symbol reader
@@ -84,6 +90,10 @@ pub struct ByteReader<Reader: Read> {
 impl<Reader: Read> ByteReader<Reader> {
     pub fn new(bytes: Bytes<Reader>) -> ByteReader<Reader> {
         ByteReader { bytes: bytes }
+    }
+
+    pub fn from(reader: Reader) -> ByteReader<Reader> {
+        Self::new(reader.bytes())
     }
 }
 
@@ -100,7 +110,6 @@ impl<Reader: Read> SymbolReader<u8> for ByteReader<Reader> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::io::*;
 
     #[test]
     fn can_read_from_vec() {
@@ -117,8 +126,7 @@ mod test {
     fn can_read_from_bytes_reader() {
         let array: [u8; 3] = [1, 2, 3];
         let slice = &array[..];
-        let bytes = slice.bytes();
-        let mut reader = ByteReader::new(bytes);
+        let mut reader = ByteReader::from(slice);
 
         assert!(reader.next_symbol() == Some(1));
         assert!(reader.next_symbol() == Some(2));
