@@ -86,6 +86,7 @@ impl<InputSymbol: PartialOrd+Clone> DfaTransitions<InputSymbol> {
                 if let Some(result) = symbol_a.partial_cmp(symbol_b) {
                     result
                 } else {
+                    // Unordered input symbols won't work well
                     Ordering::Equal
                 }
             });
