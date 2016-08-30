@@ -33,6 +33,7 @@ pub struct DfaCompiler<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: Sta
     builder: Builder,
 
     // Phantom data to poke Rust's type system (it's too dumb to see that InputSymbol is used in both Ndfa and Builder there via the type constraint)
+    #[allow(dead_code)]
     phantom: (PhantomData<InputSymbol>, PhantomData<OutputSymbol>, PhantomData<DfaType>)
 }
 
