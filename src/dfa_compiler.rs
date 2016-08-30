@@ -275,4 +275,61 @@ mod test {
             assert!(false);
         }
     }
+
+    #[test]
+    fn can_build_dfa_with_overlapping_range() {
+        // Generate a state machine from the "abc" pattern
+        let ndfa     = (MatchRange('b', 'b').append("a")).or(MatchRange('b', 'b').append("b")).to_ndfa("Success");
+        let builder  = SymbolRangeDfaBuilder::new();
+
+        let state_machine = DfaCompiler::build(ndfa, builder);
+
+        println!("{:?}", state_machine);
+
+        // Read back 'ba' manually
+        let mut state = More(state_machine.start());
+        let mut input = "ba".read_symbols();
+
+        while let More(this_state) = state {
+            let next_state = 
+                if let Some(next_char) = input.next_symbol() {
+                    this_state.next(next_char)
+                } else {
+                    this_state.finish()
+                };
+
+            state = next_state;
+        }
+
+        // Check for acceptance
+        if let Accept(count, output) = state {
+            assert!(count == 2);
+            assert!(output == &"Success");
+        } else {
+            assert!(false);
+        }
+
+        // Read back 'bb' manually
+        state = More(state_machine.start());
+        input = "bb".read_symbols();
+
+        while let More(this_state) = state {
+            let next_state = 
+                if let Some(next_char) = input.next_symbol() {
+                    this_state.next(next_char)
+                } else {
+                    this_state.finish()
+                };
+
+            state = next_state;
+        }
+
+        // Check for acceptance
+        if let Accept(count, output) = state {
+            assert!(count == 2);
+            assert!(output == &"Success");
+        } else {
+            assert!(false);
+        }
+    }
 }
