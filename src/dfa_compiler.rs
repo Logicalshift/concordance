@@ -246,11 +246,13 @@ mod test {
 
     #[test]
     fn can_build_dfa() {
+        // Generate a state machine from the "abc" pattern
         let ndfa     = "abc".into_pattern().to_ndfa("Success");
         let builder  = SymbolRangeDfaBuilder::new();
 
         let state_machine = DfaCompiler::build(ndfa, builder);
 
+        // Read back 'abc' manually
         let mut state = More(state_machine.start());
         let mut input = "abc".read_symbols();
 
@@ -265,6 +267,7 @@ mod test {
             state = next_state;
         }
 
+        // Check for acceptance
         if let Accept(count, output) = state {
             assert!(count == 3);
             assert!(output == &"Success");
