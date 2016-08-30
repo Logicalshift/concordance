@@ -137,13 +137,15 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
         // We assume that input symbols are non-overlapping, which is not automatically the case for symbol ranges
 
         // Work out the state mapping for each input symbol
-        let mut states: HashMap<DfaState, DfaTransitions<InputSymbol>> = HashMap::new();
-        let mut to_process  = vec![];
+        let mut states       = vec![];
+        let mut known_states = HashSet::new();
+        let mut to_process   = vec![];
 
         // All state machines have state 0 as their starting state
         let state_zero = DfaState::create(vec![0]);
 
-        states.insert(state_zero.clone(), DfaTransitions { state_id: 0, transitions: vec![] });
+        states.push(DfaTransitions { state_id: 0, transitions: vec![] });
+        known_states.insert(state_zero.clone());
         to_process.push(state_zero);
 
         while let Some(state) = to_process.pop() {
@@ -164,13 +166,14 @@ impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymb
 
             // Process any generated states that are not already in the DFA
             for &(_, ref maybe_new_state) in &dfa_transitions.transitions {
-                if !states.contains_key(maybe_new_state) {
+                if !known_states.contains(maybe_new_state) {
                     to_process.push(maybe_new_state.clone());
                 }
             }
 
             // Store the new state
-            states.insert(state.clone(), dfa_transitions);
+            known_states.insert(state.clone());
+            states.push(dfa_transitions);
         }
 
         // TODO: Build the DFA
