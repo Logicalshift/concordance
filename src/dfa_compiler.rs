@@ -29,7 +29,10 @@ use super::state_machine::*;
 /// Builds a deterministic finite automaton from a NDFA
 ///
 pub struct DfaCompiler<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> {
+    /// State machine that is to be compiled
     ndfa: Ndfa,
+
+    /// Builder where the state machine should be generated
     builder: Builder,
 
     // Phantom data to poke Rust's type system (it's too dumb to see that InputSymbol is used in both Ndfa and Builder there via the type constraint)
@@ -39,8 +42,26 @@ pub struct DfaCompiler<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: Sta
 
 impl<InputSymbol: PartialOrd, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
     DfaCompiler<InputSymbol, OutputSymbol, DfaType, Ndfa, Builder> {
+    ///
+    /// Builds a DFA using an NDFA and a builder
+    ///
+    pub fn build(ndfa: Ndfa, builder: Builder) -> DfaType {
+        let compiler = DfaCompiler::new(ndfa, builder);
+        compiler.compile()
+    }
+
+    ///
+    /// Creates a new DFA compiler using a particular builder and NDFA
+    ///
     pub fn new(ndfa: Ndfa, builder: Builder) -> Self {
         DfaCompiler { ndfa: ndfa, builder: builder, phantom: (PhantomData, PhantomData, PhantomData) }
+    }
+
+    ///
+    /// Compiles the NDFA into a DFA
+    ///
+    pub fn compile(self) -> DfaType {
+        unimplemented!()
     }
 }
 
@@ -52,10 +73,18 @@ mod test {
     use super::super::symbol_range_dfa::*;
 
     #[test]
-    fn create_compiler() {
-        let ndfa = "abc".into_pattern().to_ndfa("success");
-        let builder = SymbolRangeDfaBuilder::new();
+    fn can_create_compiler() {
+        let ndfa     = "abc".into_pattern().to_ndfa("success");
+        let builder  = SymbolRangeDfaBuilder::new();
 
-        let compiler = DfaCompiler::new(ndfa, builder);
+        DfaCompiler::new(ndfa, builder);
+    }
+
+    #[test]
+    fn can_build_dfa() {
+        let ndfa     = "abc".into_pattern().to_ndfa("success");
+        let builder  = SymbolRangeDfaBuilder::new();
+
+        DfaCompiler::build(ndfa, builder);
     }
 }
