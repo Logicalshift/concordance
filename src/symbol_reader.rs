@@ -22,7 +22,6 @@
 
 use std::slice::Iter;
 use std::io::Read;
-use std::io::BufRead;
 use std::io::Bytes;
 use std::str::Chars;
 
@@ -67,6 +66,18 @@ impl<'a, Symbol: Clone+'a> SymbolReader<Symbol> for Iter<'a, Symbol> {
 
 // Can read from streams
 
+//
+// TODO: implementing SymbolSource for Read would be nice
+// It's just a matter of calling bytes() on the appropriate type, but Rust's type system is simultaneously too clever and not clever enough
+// to allow that in any sensible way. You can't do it an an arbitrary Read because the Bytes object is not sized without knowing its real
+// type; I couldn't figure out a trick using the Self type to get around that, though those do work sometimes. 
+// `impl<X: Read> SymbolReader for X` sounds like a nice idea but Rust thinks X can be anything and won't allow any other implementations
+// of the interface, which makes that useless too.
+// Screwing around with lifetimes and references like below seems like it should work, but Rust doesn't seem to see the implementations on
+// actual streams.
+//
+
+/*
 impl<'a> SymbolSource<'a, u8> for &'a mut Read {
     type SymbolReader = ByteSymbolReader<Self>;
 
@@ -82,6 +93,7 @@ impl<'a> SymbolSource<'a, u8> for &'a mut BufRead {
         ByteSymbolReader::new(self.bytes())
     }
 }
+*/
 
 ///
 /// The ByteSymbolReader turns a `std::io::Bytes` object into a symbol reader
