@@ -170,9 +170,7 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol: Ord+Clone, DfaType, Ndfa: Stat
 
         // All state machines have state 0 as their starting state
         let state_zero = DfaState::create(vec![0]);
-        let state_zero_output = if let Some(output_symbol) = self.ndfa.output_symbol_for_state(0) { vec![output_symbol.clone()] } else { vec![] };
 
-        states.push(DfaTransitions { state_id: 0, transitions: vec![], output: state_zero_output });
         known_states.insert(state_zero.clone(), 0);
         to_process.push(state_zero);
 
