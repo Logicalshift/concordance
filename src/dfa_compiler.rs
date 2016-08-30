@@ -24,6 +24,7 @@ use std::marker::PhantomData;
 use std::collections::HashSet;
 use std::collections::HashMap;
 use std::iter::*;
+use std::cmp::Ordering;
 
 use super::dfa_builder::*;
 use super::state_machine::*;
@@ -31,7 +32,7 @@ use super::state_machine::*;
 ///
 /// Builds a deterministic finite automaton from a NDFA
 ///
-pub struct DfaCompiler<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> {
+pub struct DfaCompiler<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> {
     /// State machine that is to be compiled
     ndfa: Ndfa,
 
@@ -73,7 +74,7 @@ struct DfaTransitions<InputSymbol> {
     transitions: Vec<(InputSymbol, DfaState)>
 }
 
-impl<InputSymbol: Ord+Clone> DfaTransitions<InputSymbol> {
+impl<InputSymbol: PartialOrd+Clone> DfaTransitions<InputSymbol> {
     /// Goes through the transitions in the object and merges the states of any with the same symbol
     fn merge_states(&mut self) {
         if self.transitions.len() > 0 {
@@ -82,7 +83,11 @@ impl<InputSymbol: Ord+Clone> DfaTransitions<InputSymbol> {
                 let &(ref symbol_a, _) = a;
                 let &(ref symbol_b, _) = b;
 
-                symbol_a.cmp(symbol_b)
+                if let Some(result) = symbol_a.partial_cmp(symbol_b) {
+                    result
+                } else {
+                    Ordering::Equal
+                }
             });
 
             // For any transition that has a duplicate state, combine it with the previous state
@@ -113,7 +118,7 @@ impl<InputSymbol: Ord+Clone> DfaTransitions<InputSymbol> {
     }
 }
 
-impl<InputSymbol: Ord+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
+impl<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
     DfaCompiler<InputSymbol, OutputSymbol, DfaType, Ndfa, Builder> {
     ///
     /// Builds a DFA using an NDFA and a builder
