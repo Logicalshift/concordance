@@ -120,3 +120,23 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<S
         (**self).output_symbol_for_state(state)
     }
 }
+
+///
+/// Any reference to a state machine is also a state machine
+///
+impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Box<StateMachine<InputSymbol, OutputSymbol>> {
+    #[inline]
+    fn count_states(&self) -> StateId {
+        (**self).count_states()
+    }
+
+    #[inline]
+    fn get_transitions_for_state(&self, state: StateId) -> Vec<(InputSymbol, StateId)> {
+        (**self).get_transitions_for_state(state)
+    }
+
+    #[inline]
+    fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
+        (**self).output_symbol_for_state(state)
+    }
+}
