@@ -134,7 +134,24 @@ impl<InputSymbol : Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> 
     /// Retrieves the output symbol for a particular state
     ///
     fn output_symbol_for_state(&self, state: StateId) -> Option<&OutputSymbol> {
-        self.output_symbols.get(&state)
+        let mut result = self.output_symbols.get(&state);
+
+        match result {
+            None => {
+                let joined_states = self.get_join_closure(state);
+                for joined in joined_states {
+                    result = self.output_symbols.get(&joined);
+                    match result {
+                        None => {},
+                        _ => { return result; }
+                    }
+                }
+
+                None
+            },
+
+            _ => result
+        }
     }
 }
 
