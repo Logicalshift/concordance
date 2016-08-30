@@ -21,7 +21,10 @@
 //!
 
 use std::slice::Iter;
-use std::io::*;
+use std::io::Read;
+use std::io::BufRead;
+use std::io::Bytes;
+use std::str::Chars;
 
 ///
 /// A symbol reader reads one symbol at a time from a source
@@ -107,6 +110,23 @@ impl<Reader: Read> SymbolReader<u8> for ByteSymbolReader<Reader> {
     }
 }
 
+//
+// Can read from strings 
+//
+impl<'a> SymbolSource<'a, char> for &'a str {
+    type SymbolReader = Chars<'a>;
+
+    fn read_symbols(self) -> Self::SymbolReader {
+        self.chars()
+    }
+}
+
+impl<'a> SymbolReader<char> for Chars<'a> {
+    fn next_symbol(&mut self) -> Option<char> {
+        self.next()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -131,6 +151,16 @@ mod test {
         assert!(reader.next_symbol() == Some(1));
         assert!(reader.next_symbol() == Some(2));
         assert!(reader.next_symbol() == Some(3));
+        assert!(reader.next_symbol() == None);
+    }
+
+    #[test]
+    fn can_read_from_string_reader() {
+        let mut reader = "abc".read_symbols();
+
+        assert!(reader.next_symbol() == Some('a'));
+        assert!(reader.next_symbol() == Some('b'));
+        assert!(reader.next_symbol() == Some('c'));
         assert!(reader.next_symbol() == None);
     }
 }
