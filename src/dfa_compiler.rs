@@ -47,6 +47,7 @@ pub struct DfaCompiler<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndf
 /// Represents a state in the DFA (one or more states from the source)
 #[derive(Eq, PartialEq, Hash, Clone)]
 struct DfaState {
+    /// List of the states from the NDFA that make up this DFA state (will be ordered if `dedupe` is called)
     source_states: Vec<StateId>
 }
 
@@ -69,12 +70,18 @@ impl DfaState {
 }
 
 /// Represents the transitions for a source state
-struct DfaTransitions<InputSymbol> {
+struct DfaTransitions<InputSymbol, OutputSymbol: Ord> {
+    /// ID of this state in the resulting DFA
     state_id: StateId,
-    transitions: Vec<(InputSymbol, DfaState)>
+
+    /// Transitions for this state (will be unique if `merge_states` is called)
+    transitions: Vec<(InputSymbol, DfaState)>,
+
+    /// The output symbols for this state (empty if this is not an accepting state)
+    output: Vec<OutputSymbol>
 }
 
-impl<InputSymbol: PartialOrd+Clone> DfaTransitions<InputSymbol> {
+impl<InputSymbol: PartialOrd+Clone, OutputSymbol: Ord> DfaTransitions<InputSymbol, OutputSymbol> {
     /// Goes through the transitions in the object and merges the states of any with the same symbol
     fn merge_states(&mut self) {
         if self.transitions.len() > 0 {
@@ -117,9 +124,23 @@ impl<InputSymbol: PartialOrd+Clone> DfaTransitions<InputSymbol> {
             self.transitions = new_transitions;
         }
     }
+
+    ///
+    /// Finds the output symbol that corresponds to this state
+    ///
+    /// Rule is that if there is more than one output symbol then the symbol whose value is ordered lowest is the output for this state
+    ///
+    fn output_symbol(&mut self) -> Option<&OutputSymbol> {
+        if self.output.len() > 0 {
+            self.output.sort();
+            Some(&self.output[0])
+        } else {
+            None
+        }
+    }
 }
 
-impl<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
+impl<InputSymbol: PartialOrd+Clone, OutputSymbol: Ord+Clone, DfaType, Ndfa: StateMachine<InputSymbol, OutputSymbol>, Builder: DfaBuilder<InputSymbol, OutputSymbol, DfaType>> 
     DfaCompiler<InputSymbol, OutputSymbol, DfaType, Ndfa, Builder> {
     ///
     /// Builds a DFA using an NDFA and a builder
@@ -149,14 +170,16 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<In
 
         // All state machines have state 0 as their starting state
         let state_zero = DfaState::create(vec![0]);
+        let state_zero_output = if let Some(output_symbol) = self.ndfa.output_symbol_for_state(0) { vec![output_symbol.clone()] } else { vec![] };
 
-        states.push(DfaTransitions { state_id: 0, transitions: vec![] });
+        states.push(DfaTransitions { state_id: 0, transitions: vec![], output: state_zero_output });
         known_states.insert(state_zero.clone(), 0);
         to_process.push(state_zero);
 
         while let Some(state) = to_process.pop() {
             // Create a new transitions object for this state
             let mut transitions = vec![];
+            let mut output      = vec![];
 
             for source_state in &state.source_states {
                 let source_transitions = self.ndfa.get_transitions_for_state(*source_state);
@@ -164,10 +187,14 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<In
                 for (symbol, state) in source_transitions {
                     transitions.push((symbol, DfaState::create(vec![state])));
                 }
+
+                if let Some(source_output) = self.ndfa.output_symbol_for_state(*source_state) {
+                    output.push(source_output.clone());
+                }
             }
 
             // Merge it so that we only have one transition per symbol
-            let mut dfa_transitions = DfaTransitions { state_id: states.len() as StateId, transitions: transitions};
+            let mut dfa_transitions = DfaTransitions { state_id: states.len() as StateId, transitions: transitions, output: output };
             dfa_transitions.merge_states();
 
             // Process any generated states that are not already in the DFA
@@ -185,15 +212,17 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol, DfaType, Ndfa: StateMachine<In
         // Build the DFA
         let mut builder = self.builder;
 
-        for dfa_state in states {
+        for mut dfa_state in states {
             builder.start_state();
+
+            if let Some(output_symbol) = dfa_state.output_symbol() {
+                builder.accept(output_symbol.clone());
+            }
 
             for (symbol, target_state) in dfa_state.transitions {
                 builder.transition(symbol, known_states[&target_state]);
             }
         }
-
-        // TODO: output symbols
 
         // Generate the final DFA
         builder.build()
