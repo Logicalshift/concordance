@@ -235,6 +235,8 @@ mod test {
     use super::super::regular_pattern::*;
     use super::super::state_machine::*;
     use super::super::symbol_range_dfa::*;
+    use super::super::pattern_matcher::*;
+    use super::super::symbol_reader::*;
 
     #[test]
     fn can_create_compiler() {
@@ -246,9 +248,30 @@ mod test {
 
     #[test]
     fn can_build_dfa() {
-        let ndfa     = "abc".into_pattern().to_ndfa("success");
+        let ndfa     = "abc".into_pattern().to_ndfa("Success");
         let builder  = SymbolRangeDfaBuilder::new();
 
-        DfaCompiler::build(ndfa, builder);
+        let state_machine = DfaCompiler::build(ndfa, builder);
+
+        let mut state = More(state_machine.start());
+        let mut input = "abc".read_symbols();
+
+        while let More(this_state) = state {
+            let next_state = 
+                if let Some(next_char) = input.next_symbol() {
+                    this_state.next(next_char)
+                } else {
+                    this_state.finish()
+                };
+
+            state = next_state;
+        }
+
+        if let Accept(count, output) = state {
+            assert!(count == 3);
+            assert!(output == &"Success");
+        } else {
+            assert!(false);
+        }
     }
 }
