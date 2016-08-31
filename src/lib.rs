@@ -34,6 +34,7 @@ pub use self::dfa_compiler::*;
 pub mod symbol_range;
 pub mod symbol_reader;
 pub mod state_machine;
+pub mod overlapping_symbols;
 pub mod pattern_matcher;
 pub mod empty_state_machine;
 pub mod ndfa;
