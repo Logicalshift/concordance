@@ -215,7 +215,7 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 3), &SymbolRange::new(4, 4), &SymbolRange::new(5, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 4), &SymbolRange::new(5, 5), &SymbolRange::new(6, 6)]);
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 4), &SymbolRange::new(5, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 5), &SymbolRange::new(6, 6)]);
     }
 
     #[test]
@@ -316,6 +316,6 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 0), &SymbolRange::new(1, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 0), &SymbolRange::new(1, 1), &SymbolRange::new(3, 6)]);
     }
 }
