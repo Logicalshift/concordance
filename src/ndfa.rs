@@ -36,9 +36,13 @@
 //! ```
 //!
 
-use super::state_machine::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
+
+use super::state_machine::*;
+use super::overlapping_symbols::*;
+use super::countable::*;
+use super::symbol_range::*;
 
 ///
 /// Represents a non-deterministic finite-state automata
@@ -58,7 +62,7 @@ pub struct Ndfa<InputSymbol, OutputSymbol> where InputSymbol : Clone {
     output_symbols: HashMap<StateId, OutputSymbol>
 }
 
-impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
     ///
     /// Creates a new non-deterministic finite Automaton
     ///
@@ -103,7 +107,47 @@ impl<InputSymbol : Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
     }
 }
 
-impl<InputSymbol : Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Ndfa<InputSymbol, OutputSymbol> {
+impl<Symbol: PartialOrd+Clone+Countable, OutputSymbol> Ndfa<SymbolRange<Symbol>, OutputSymbol> {
+    ///
+    /// Modifies this NDFA so that all ranges used in all transitions are unique and have no overlapping ranges
+    ///
+    pub fn fix_overlapping_ranges(&mut self) {
+        // TODO: this forces us to fix overlapping ranges every time we generate an NDFA, rather than before use
+        // We'd like to fix before use to allow for things like merged state machines
+
+        // Gather all of the symbols in a map
+        let mut symbol_map = SymbolMap::new();
+
+        for transit in &self.transitions {
+            for &(ref range, _) in transit {
+                symbol_map.add_range(range);
+            }
+        }
+
+        // Get a new map with no overlapping symbols
+        let no_overlapping = symbol_map.to_non_overlapping_map();
+
+        // Generate a new set of transitions based on no_overlapping
+        let mut new_transitions = vec![];
+
+        for transit in &self.transitions {
+            let without_overlapping: Vec<(SymbolRange<Symbol>, StateId)> = transit.iter()
+                .flat_map(|&(ref range, state)| {
+                    let mut result = vec![];
+                    for range in no_overlapping.find_overlapping_ranges(range) {
+                        result.push((range.clone(), state));
+                    }
+                    result
+                })
+                .collect();
+            new_transitions.push(without_overlapping);
+        }
+
+        self.transitions = new_transitions;
+    }
+}
+
+impl<InputSymbol: Clone, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Ndfa<InputSymbol, OutputSymbol> {
     ///
     /// Retrieves the number of states in this state machine
     ///

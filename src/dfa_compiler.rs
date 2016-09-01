@@ -162,6 +162,7 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol: Ord+Clone, DfaType, Ndfa: Stat
     ///
     pub fn compile(self) -> DfaType {
         // We assume that input symbols are non-overlapping, which is not automatically the case for symbol ranges
+        // You can call Ndfa.fix_overlapping_ranges() to remove any overlapping ranges from an NDFA
 
         // Work out the state mapping for each input symbol
         let mut states       = vec![];
