@@ -55,6 +55,8 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         // Insert the range if it is not already in the map
         if let Err(insertion_pos) = existing {
             self.ranges.insert(insertion_pos, range.clone());
+        } else if let Ok(insertion_pos) = existing {
+            self.ranges.insert(insertion_pos, range.clone());
         }
     }
 
@@ -124,6 +126,8 @@ mod test {
         let bottom = map.find_overlapping_ranges(&SymbolRange::new(0, 1));
         let all    = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
         let top    = map.find_overlapping_ranges(&SymbolRange::new(6, 6));
+
+        println!("All is: {:?}", all);
 
         assert!(bottom == vec![&SymbolRange::new(0, 4)]);
         assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(2, 5), &SymbolRange::new(3, 6)]);
