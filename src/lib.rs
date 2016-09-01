@@ -20,6 +20,7 @@
 //! NDFA is a library for working with deterministic and non-deterministic finite-state automata.
 //!
 
+pub use self::countable::*;
 pub use self::symbol_range::*;
 pub use self::symbol_reader::*;
 pub use self::state_machine::*;
@@ -31,6 +32,7 @@ pub use self::dfa_builder::*;
 pub use self::symbol_range_dfa::*;
 pub use self::dfa_compiler::*;
 
+pub mod countable;
 pub mod symbol_range;
 pub mod symbol_reader;
 pub mod state_machine;
