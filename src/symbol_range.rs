@@ -22,15 +22,24 @@
 //! basis, and impossible for some symbol sets (consider a state machine working on u32s). Instead, transitions are stored as
 //! symbol ranges.
 //!
+//! Symbol ranges are inclusive ranges (unlike Rusts built-in Range type, which is exclusive). This has the advantage that it's
+//! possible to represent the entire range of symbols in a particular type: exclusive ranges have to exclude at least one symbol
+//! so can never represent the entire range without having to treat it as a special case.
+//!
+//! Inclusive ranges have a problem in that it's often necessary to generate adjacent ranges. If there are two inclusive ranges
+//! `0...1` and `1...2`, then they both contain symbol `1'. This is a problem because it's not always possible to decrement a
+//! value - consider a range of floating point values. An additional consideration is that Rust doesn't yet support specialization
+//! which makes it difficult to provide range implementation for countable types vs other types.
+//!
+//! To deal with this problem, there's an extra rule for choosing between ranges that overlap: the one with the higher `lowest` value
+//! is the one that should be chosen. This rule means if a range has a higher adjacent range it acts as if it is an exclusive ranges
+//! and if it does not, it acts as if it were inclusive.
+//!
 
 use std::cmp::*;
 
 ///
 /// Represents a range of symbols
-///
-/// Symbols must be ordered in order to use them with a range-based state machine. Symbol ranges are inclusive unlike standard
-/// Rust ranges - this allows them to represent the entire range of symbols instead of having a maximum coverage of 'all symbols 
-/// except the last one'.
 ///
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct SymbolRange<Symbol: PartialOrd> {
