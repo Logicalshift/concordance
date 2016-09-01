@@ -240,6 +240,25 @@ mod test {
     }
 
     #[test]
+    fn can_deal_with_duplicate_symbols() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 5));
+        map.add_range(&SymbolRange::new(2, 2));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        map.add_range(&SymbolRange::new(0, 5));
+        map.add_range(&SymbolRange::new(2, 2));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
+
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 5), &SymbolRange::new(6, 6)]);
+    }
+
+    #[test]
     fn generate_correctly_for_single_symbol() {
         let mut map = SymbolMap::new();
 
