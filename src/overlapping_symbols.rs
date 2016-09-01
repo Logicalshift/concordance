@@ -206,4 +206,19 @@ mod test {
 
         assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 4), &SymbolRange::new(4, 5), &SymbolRange::new(5, 6)]);
     }
+
+    #[test]
+    fn can_get_non_overlapping_map_with_single_symbols() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 5));
+        map.add_range(&SymbolRange::new(2, 2));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
+
+        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 5), &SymbolRange::new(5, 6)]);
+    }
 }
