@@ -92,6 +92,11 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
             pos -= 1;
         }
 
+        // Apply the adjacency rule (if this range starts where the next range starts, then use the next range)
+        if pos+1 < self.ranges.len() && self.ranges[pos].highest == self.ranges[pos+1].lowest && self.ranges[pos+1].lowest == range.lowest {
+            pos += 1;
+        }
+
         // TODO: can we construct a set of ranges such that one is missed here? Think maybe we can
         while pos < self.ranges.len() && self.ranges[pos].lowest <= range.highest {
             result.push(&self.ranges[pos]);
@@ -170,8 +175,6 @@ mod test {
         map.add_range(&SymbolRange::new(0, 3));
 
         let all    = map.find_overlapping_ranges(&SymbolRange::new(0, 1));
-
-        println!("With duplicate lower values is: {:?}", all);
 
         assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(0, 3)]);
     }
