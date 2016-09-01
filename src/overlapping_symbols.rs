@@ -87,6 +87,12 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
             Err(insert_position) => insert_position
         };
 
+        // Move backwards if the previous position overlaps this one
+        // NOT if only by the highest value; see the adjacency rule in symbol_range.rs
+        if pos > 0 && self.ranges[pos-1].highest > range.lowest {
+            pos -= 1;
+        }
+
         // TODO: can we construct a set of ranges such that one is missed here? Think maybe we can
         while pos < self.ranges.len() && self.ranges[pos].lowest <= range.highest {
             result.push(&self.ranges[pos]);
