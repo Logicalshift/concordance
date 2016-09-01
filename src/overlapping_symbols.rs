@@ -47,10 +47,24 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
     }
 
     ///
+    /// Orders two symbol ranges
+    ///
+    #[inline]
+    fn order_ranges(a: &SymbolRange<Symbol>, b: &SymbolRange<Symbol>) -> Ordering {
+        let ordering = SymbolMap::order_symbols(&a.lowest, &b.lowest);
+
+        if ordering == Ordering::Equal {
+            SymbolMap::order_symbols(&a.highest, &b.highest)
+        } else {
+            ordering
+        }
+    }
+
+    ///
     /// Adds a range to those that are known about by this object
     ///
     pub fn add_range(&mut self, range: &SymbolRange<Symbol>) {
-        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_symbols(&range.lowest, &test_range.lowest) });
+        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(range, test_range) });
 
         // Insert the range if it is not already in the map
         if let Err(insertion_pos) = existing {
@@ -67,7 +81,7 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         let mut result = vec![];
 
         // Find the first range that matches (or the insertion position, which should be the first range wit a lowest value higher than the target range)
-        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_symbols(&range.lowest, &test_range.lowest) });
+        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(range, test_range) });
 
         // Start returning values from here
         let mut pos = match existing {
