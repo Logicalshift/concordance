@@ -55,7 +55,7 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
         let ordering = SymbolMap::order_symbols(&a.lowest, &b.lowest);
 
         if ordering == Ordering::Equal {
-            SymbolMap::order_symbols(&b.highest, &a.highest)
+            SymbolMap::order_symbols(&a.highest, &b.highest)
         } else {
             ordering
         }
@@ -126,16 +126,16 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
                         to_process.push(overlap_with);
                     } else if might_overlap.lowest == overlap_with.lowest {
                         // Ranges start at the same location. We need to divide them in case more than two ranges are overlapping
-                        let (smaller_range, larger_range) = (overlap_with, might_overlap);      // Because of the sort order
+                        let (smaller_range, larger_range) = (might_overlap, overlap_with);      // Because of the sort order
 
                         // Chop out the smaller range from the larger range, then insert into the stack in order
                         let larger_range_without_smaller_range = SymbolRange::new(smaller_range.highest.next(), larger_range.highest.clone());
 
-                        to_process.push(smaller_range);
-
                         if let Err(insertion_pos) = to_process.binary_search_by(|test_range| { SymbolMap::order_ranges(&larger_range_without_smaller_range, test_range) }) {
                             to_process.insert(insertion_pos, larger_range_without_smaller_range);
                         }
+
+                        to_process.push(smaller_range);
                     } else {
                         // There's a range from the lowest of the first range to the lowest of the second ranges
                         result.push(SymbolRange::new(might_overlap.lowest.clone(), overlap_with.lowest.prev()));
