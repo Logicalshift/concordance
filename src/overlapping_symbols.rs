@@ -141,8 +141,14 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
                         result.push(SymbolRange::new(might_overlap.lowest.clone(), overlap_with.lowest.prev()));
 
                         // Chop out the bit we just pushed from might_overlap and push back both ranges
-                        to_process.push(overlap_with.clone());
-                        to_process.push(SymbolRange::new(overlap_with.lowest, might_overlap.highest));
+                        // Maintain sort order depending on highest (as lowest for both ranges will be equal)
+                        if overlap_with.highest > might_overlap.highest {
+                            to_process.push(overlap_with.clone());
+                            to_process.push(SymbolRange::new(overlap_with.lowest, might_overlap.highest));
+                        } else {
+                            to_process.push(SymbolRange::new(overlap_with.lowest.clone(), might_overlap.highest));
+                            to_process.push(overlap_with);
+                        }
                     }
                 }
             } else {
@@ -285,7 +291,6 @@ mod test {
         let non_overlapping = map.to_non_overlapping_map();
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 10));
-        println!("{:?}", all);
 
         assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(5,5), &SymbolRange::new(6, 10)]);
     }
