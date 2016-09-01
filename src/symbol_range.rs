@@ -26,15 +26,6 @@
 //! possible to represent the entire range of symbols in a particular type: exclusive ranges have to exclude at least one symbol
 //! so can never represent the entire range without having to treat it as a special case.
 //!
-//! Inclusive ranges have a problem in that it's often necessary to generate adjacent ranges. If there are two inclusive ranges
-//! `0...1` and `1...2`, then they both contain symbol `1'. This is a problem because it's not always possible to decrement a
-//! value - consider a range of floating point values. An additional consideration is that Rust doesn't yet support specialization
-//! which makes it difficult to provide range implementation for countable types vs other types.
-//!
-//! To deal with this problem, there's an extra rule for choosing between ranges that overlap: the one with the higher `lowest` value
-//! is the one that should be chosen. This rule means if a range has a higher adjacent range it acts as if it is an exclusive ranges
-//! and if it does not, it acts as if it were inclusive.
-//!
 
 use std::cmp::*;
 

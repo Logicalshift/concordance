@@ -17,16 +17,17 @@
 use std::cmp::Ordering;
 
 use super::symbol_range::*;
+use super::countable::*;
 
 ///
 /// A symbol map maps from one set of symbol ranges to another
 ///
-pub struct SymbolMap<Symbol: PartialOrd+Clone> {
+pub struct SymbolMap<Symbol: PartialOrd+Clone+Countable> {
     // Ranges in this symbol map
     ranges: Vec<SymbolRange<Symbol>>,
 }
 
-impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
+impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
     ///
     /// Creates a new symbol map
     ///
@@ -92,11 +93,6 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
             pos -= 1;
         }
 
-        // Apply the adjacency rule (if this range starts where the next range starts, then use the next range)
-        if pos+1 < self.ranges.len() && self.ranges[pos].highest == self.ranges[pos+1].lowest && self.ranges[pos+1].lowest == range.lowest {
-            pos += 1;
-        }
-
         // TODO: can we construct a set of ranges such that one is missed here? Think maybe we can
         while pos < self.ranges.len() && self.ranges[pos].lowest <= range.highest {
             result.push(&self.ranges[pos]);
@@ -123,8 +119,13 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         // Generate a new symbol map with these ranges
         // They'll overlap with the last value, which should be OK if following the rules for adjacent ranges in symbol_range.rs
         let mut result = vec![];
-        for index in 0..range_symbols.len()-1 {
-            result.push(SymbolRange::new(range_symbols[index].clone(), range_symbols[index+1].clone()));
+        for index in 0..range_symbols.len()-2 {
+            result.push(SymbolRange::new(range_symbols[index].clone(), range_symbols[index+1].prev()));
+        }
+
+        if range_symbols.len() > 1 {
+            // Last item is always inclusive
+            result.push(SymbolRange::new(range_symbols[range_symbols.len()-2].clone(), range_symbols[range_symbols.len()-1].clone()));
         }
 
         // We already sorted everything, so bypass the usual 'add' method (which sorts as it goes)
@@ -180,19 +181,6 @@ mod test {
     }
 
     #[test]
-    fn obeys_adjacency_rule() {
-        let mut map = SymbolMap::new();
-
-        // By the adjacency rule for symbol ranges (in symbol_range.rs), '4' here is only in the upper range
-        map.add_range(&SymbolRange::new(0, 4));
-        map.add_range(&SymbolRange::new(4, 8));
-
-        let top = map.find_overlapping_ranges(&SymbolRange::new(4, 4));
-
-        assert!(top == vec![&SymbolRange::new(4, 8)]);
-    }
-
-    #[test]
     fn can_get_non_overlapping_map() {
         let mut map = SymbolMap::new();
 
@@ -204,7 +192,7 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 4), &SymbolRange::new(4, 5), &SymbolRange::new(5, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 3), &SymbolRange::new(4, 4), &SymbolRange::new(5, 6)]);
     }
 
     #[test]
@@ -219,7 +207,7 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 5), &SymbolRange::new(5, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 4), &SymbolRange::new(5, 6)]);
     }
 
     #[test]
@@ -233,8 +221,7 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        // Note: NOT just (0..1): we need to take advantage of the adjacency rule so that there's a range representing just '0' here
-        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(1, 1)]);
+        assert!(all == vec![&SymbolRange::new(0, 0), &SymbolRange::new(1, 1)]);
     }
 
     #[test]
@@ -249,8 +236,6 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        // Gah, this doesn't work. Need ranges 0-1, 1-1, 1-3, 3-6 but the adjacency rule makes 1-1 and 1-3 identical
-        // 0-1, 1-2, 2-3, 3-6 would work
-        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(1, 1), &SymbolRange::new(3, 6), &SymbolRange::new(3, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 0), &SymbolRange::new(1, 1), &SymbolRange::new(2, 2), &SymbolRange::new(3, 6)]);
     }
 }
