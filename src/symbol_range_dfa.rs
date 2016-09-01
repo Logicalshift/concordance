@@ -161,9 +161,7 @@ impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> MatchingState<'a, InputSy
 
         // See if there is an input symbol matching this transition
         // TODO: consider binary searching for states with large numbers of transitions? (Do these occur regularly in patterns that people use?)
-        // Linear searching in reverse is a quick way to apply the rule that if two adjacent ranges share their last/first symbol that
-        // the later range is the one that matches. This works provided the ranges are sorted into order as required by the builder trait.
-        for transit in (start_transition..end_transition).rev() {
+        for transit in start_transition..end_transition {
             // Test this transition
             let (ref range, new_state) = self.state_machine.transitions[transit];
 
@@ -228,41 +226,6 @@ mod test {
         assert!(state_machine.output_symbol_for_state(0) == None);
         assert!(state_machine.output_symbol_for_state(1) == Some(&"Success"));
         assert!(state_machine.get_transitions_for_state(0) == vec![(SymbolRange::new(0,0), 1)]);
-    }
-
-    #[test]
-    fn state_machine_follows_adjacency_rules() {
-        let mut builder = SymbolRangeDfaBuilder::new();
-
-        // State 0: '0-1', move to state 1, '1-2', move to state 2
-        // By the adjacency rules defined in symbol_range.rs, '1' should always move to state 2
-        builder.start_state();
-        builder.transition(SymbolRange::new(0, 1), 1);
-        builder.transition(SymbolRange::new(1, 2), 2);
-
-        // State 1: reject
-        builder.start_state();
-
-        // State 2: accept
-        builder.start_state();
-        builder.accept("Success");
-
-        let state_machine = builder.build();
-
-        // For the string '1' we should move to state 2 and accept
-        let start_state = state_machine.start();
-        let mut action  = start_state.next(1);
-
-        if let More(next_state) = action {
-            action = next_state.finish();
-        }
-
-        if let Accept(count, symbol) = action {
-            assert!(count == 1);
-            assert!(symbol == &"Success");
-        } else {
-            assert!(false);
-        }
     }
 
     #[test]
