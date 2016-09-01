@@ -121,7 +121,7 @@ impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

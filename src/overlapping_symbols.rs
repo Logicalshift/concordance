@@ -107,4 +107,54 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         SymbolMap { ranges: result }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use super::super::symbol_range::*;
+
+    #[test]
+    fn can_lookup_overlapping_ranges() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 4));
+        map.add_range(&SymbolRange::new(2, 5));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        let bottom = map.find_overlapping_ranges(&SymbolRange::new(0, 1));
+        let all    = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
+        let top    = map.find_overlapping_ranges(&SymbolRange::new(6, 6));
+
+        assert!(bottom == vec![&SymbolRange::new(0, 4)]);
+        assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(2, 5), &SymbolRange::new(3, 6)]);
+        assert!(top == vec![&SymbolRange::new(6, 6)]);
+    }
+
+    #[test]
+    fn obeys_adjacency_rule() {
+        let mut map = SymbolMap::new();
+
+        // By the adjacency rule for symbol ranges (in symbol_range.rs), '4' here is only in the upper range
+        map.add_range(&SymbolRange::new(0, 4));
+        map.add_range(&SymbolRange::new(4, 8));
+
+        let top = map.find_overlapping_ranges(&SymbolRange::new(4, 4));
+
+        assert!(top == vec![&SymbolRange::new(4, 8)]);
+    }
+
+    #[test]
+    fn can_get_non_overlapping_map() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 4));
+        map.add_range(&SymbolRange::new(2, 5));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
+
+        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 6)]);
+    }
 }

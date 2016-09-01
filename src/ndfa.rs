@@ -222,7 +222,7 @@ impl<InputSymbol : Clone, OutputSymbol> MutableStateMachine<InputSymbol, OutputS
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::super::state_machine::*;
     use super::*;
 
