@@ -69,8 +69,6 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         // Insert the range if it is not already in the map
         if let Err(insertion_pos) = existing {
             self.ranges.insert(insertion_pos, range.clone());
-        } else if let Ok(insertion_pos) = existing {
-            self.ranges.insert(insertion_pos, range.clone());
         }
     }
 
