@@ -81,4 +81,30 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
 
         result
     }
+
+    ///
+    /// Creates a non-overlapping range from an overlapping one
+    ///
+    pub fn to_non_overlapping_map(&self) -> SymbolMap<Symbol> {
+        // Create a vector of all the range symbols
+        let mut range_symbols: Vec<Symbol> = self.ranges.iter()
+            .map(|r| r.lowest.clone())
+            .chain(self.ranges.iter().map(|r| r.highest.clone()))
+            .collect();
+
+        // Sort and dedupe (we'll get pairs of ranges)
+        range_symbols.sort_by(SymbolMap::order_symbols);
+        range_symbols.dedup();
+
+        // Generate a new symbol map with these ranges
+        // They'll overlap with the last value, which should be OK if following the rules for adjacent ranges in symbol_range.rs
+        let mut result = vec![];
+        for index in 0..range_symbols.len()-1 {
+            result.push(SymbolRange::new(range_symbols[index].clone(), range_symbols[index+1].clone()));
+        }
+
+        // We already sorted everything, so bypass the usual 'add' method (which sorts as it goes)
+        SymbolMap { ranges: result }
+    }
+}
 }
