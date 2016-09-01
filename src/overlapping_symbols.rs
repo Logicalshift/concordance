@@ -221,4 +221,36 @@ mod test {
 
         assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 5), &SymbolRange::new(5, 6)]);
     }
+
+    #[test]
+    fn can_get_non_overlapping_map_with_single_symbols_at_start() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 0));
+        map.add_range(&SymbolRange::new(0, 1));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
+
+        // Note: NOT just (0..1): we need to take advantage of the adjacency rule so that there's a range representing just '0' here
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(1, 1)]);
+    }
+
+    #[test]
+    fn can_get_non_overlapping_map_with_single_symbols_at_start_and_gap() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 0));
+        map.add_range(&SymbolRange::new(0, 1));
+        map.add_range(&SymbolRange::new(3, 6));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
+
+        // Gah, this doesn't work. Need ranges 0-1, 1-1, 1-3, 3-6 but the adjacency rule makes 1-1 and 1-3 identical
+        // 0-1, 1-2, 2-3, 3-6 would work
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(1, 1), &SymbolRange::new(3, 6), &SymbolRange::new(3, 6)]);
+    }
 }
