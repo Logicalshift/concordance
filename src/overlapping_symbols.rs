@@ -211,6 +211,21 @@ mod test {
     }
 
     #[test]
+    fn generate_correctly_for_single_overlap() {
+        let mut map = SymbolMap::new();
+
+        // Here the symbol '5' is in both ranges, so we should generate it as a seperate range in the non-overlapping version
+        map.add_range(&SymbolRange::new(0, 5));
+        map.add_range(&SymbolRange::new(5, 10));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 10));
+
+        assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(5,5), &SymbolRange::new(6, 10)]);
+    }
+
+    #[test]
     fn can_get_non_overlapping_map_with_single_symbols_at_start() {
         let mut map = SymbolMap::new();
 
