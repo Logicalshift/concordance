@@ -145,11 +145,9 @@ mod test {
         let all    = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
         let top    = map.find_overlapping_ranges(&SymbolRange::new(6, 6));
 
-        println!("All is: {:?}", all);
-
         assert!(bottom == vec![&SymbolRange::new(0, 4)]);
         assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(2, 5), &SymbolRange::new(3, 6)]);
-        assert!(top == vec![&SymbolRange::new(6, 6)]);
+        assert!(top == vec![&SymbolRange::new(3, 6)]);
     }
 
     #[test]
@@ -160,9 +158,9 @@ mod test {
         map.add_range(&SymbolRange::new(5, 10));
         map.add_range(&SymbolRange::new(11, 15));
 
-        let bottom = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
+        let mid = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
 
-        assert!(bottom == vec![&SymbolRange::new(0, 4)]);
+        assert!(mid == vec![&SymbolRange::new(0, 4)]);
     }
 
     #[test]
