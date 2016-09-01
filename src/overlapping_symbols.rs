@@ -135,6 +135,20 @@ mod test {
     }
 
     #[test]
+    fn works_with_duplicate_lower_values() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 2));
+        map.add_range(&SymbolRange::new(0, 3));
+
+        let all    = map.find_overlapping_ranges(&SymbolRange::new(0, 1));
+
+        println!("With duplicate lower values is: {:?}", all);
+
+        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(0, 3)]);
+    }
+
+    #[test]
     fn obeys_adjacency_rule() {
         let mut map = SymbolMap::new();
 
