@@ -88,8 +88,7 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         };
 
         // Move backwards if the previous position overlaps this one
-        // NOT if only by the highest value; see the adjacency rule in symbol_range.rs
-        if pos > 0 && self.ranges[pos-1].highest > range.lowest {
+        if pos > 0 && self.ranges[pos-1].highest >= range.lowest {
             pos -= 1;
         }
 
