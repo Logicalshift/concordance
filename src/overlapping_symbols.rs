@@ -198,6 +198,6 @@ mod test {
 
         let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 6));
 
-        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 6)]);
+        assert!(all == vec![&SymbolRange::new(0, 2), &SymbolRange::new(2, 3), &SymbolRange::new(3, 4), &SymbolRange::new(4, 5), &SymbolRange::new(5, 6)]);
     }
 }
