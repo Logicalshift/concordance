@@ -67,7 +67,7 @@ impl<Symbol: PartialOrd> SymbolRange<Symbol> {
     #[inline]
     pub fn new(lowest: Symbol, highest: Symbol) -> SymbolRange<Symbol> {
         if lowest > highest {
-            SymbolRange { lowest: highest, highest: lowest }
+            panic!("lowest must be <= highest when creating SymbolRanges");
         } else {
             SymbolRange { lowest: lowest, highest: highest }
         }
@@ -124,11 +124,9 @@ mod test {
     }
 
     #[test]
-    fn can_create_range_reversed() {
-        let range = SymbolRange::new(5, 1);
-
-        assert!(range.lowest == 1);
-        assert!(range.highest == 5);
+    #[should_panic]
+    fn reversing_ranges_panics() {
+        SymbolRange::new(5, 1);
     }
 
     #[test]
