@@ -215,6 +215,33 @@ mod test {
     }
 
     #[test]
+    fn generate_correctly_for_single_symbol() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 0));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 10));
+
+        assert!(all == vec![&SymbolRange::new(0, 0)]);
+    }
+
+    #[test]
+    fn generate_correctly_for_two_single_symbols() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 0));
+        map.add_range(&SymbolRange::new(1, 1));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 10));
+
+        assert!(all == vec![&SymbolRange::new(0, 0), &SymbolRange::new(1, 1)]);
+    }
+
+    #[test]
     fn generate_correctly_for_single_overlap() {
         let mut map = SymbolMap::new();
 
