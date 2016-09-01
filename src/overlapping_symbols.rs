@@ -55,7 +55,7 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
         let ordering = SymbolMap::order_symbols(&a.lowest, &b.lowest);
 
         if ordering == Ordering::Equal {
-            SymbolMap::order_symbols(&a.highest, &b.highest)
+            SymbolMap::order_symbols(&b.highest, &a.highest)
         } else {
             ordering
         }
@@ -106,33 +106,52 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
     /// Creates a non-overlapping range from an overlapping one
     ///
     pub fn to_non_overlapping_map(&self) -> SymbolMap<Symbol> {
-        // Create a vector of all the range symbols
-        let mut lowest:  Vec<Symbol> = self.ranges.iter().map(|r| r.lowest.clone()).collect();
-        let mut highest: Vec<Symbol> = self.ranges.iter().map(|r| r.highest.clone()).collect();
+        // Stack, popping the lowest ordered ranges first
+        let mut to_process = self.ranges.clone();
+        to_process.reverse();
 
-        // Dedupe the lowest and highest symbols seperately
-        lowest.sort_by(SymbolMap::order_symbols);
-        lowest.dedup();
-
-        highest.sort_by(SymbolMap::order_symbols);
-        highest.dedup();
-
-        // Combine into the set of ranges (each pair representing a range in the result)
-        let mut range_symbols: Vec<Symbol> = lowest.into_iter().chain(highest.into_iter()).collect();
-        range_symbols.sort_by(SymbolMap::order_symbols);
-
-        // Generate a new symbol map with these ranges
         let mut result = vec![];
-        for index in 0..range_symbols.len()-2 {
-            result.push(SymbolRange::new(range_symbols[index].clone(), range_symbols[index+1].prev()));
+
+        while let Some(might_overlap) = to_process.pop() {
+            if let Some(overlap_with) = to_process.pop() {
+                // Stack has two ranges on top. They might overlap
+                if !might_overlap.overlaps(&overlap_with) {
+                    // Doesn't overlap: can just push might_overlap and continue
+                    result.push(might_overlap);
+                    to_process.push(overlap_with);
+                } else {
+                    // Got an overlap
+                    if might_overlap == overlap_with {
+                        // Ranges are the same, just discard one
+                        to_process.push(overlap_with);
+                    } else if might_overlap.lowest == overlap_with.lowest {
+                        // Ranges start at the same location. We need to divide them in case more than two ranges are overlapping
+                        let (smaller_range, larger_range) = (overlap_with, might_overlap);      // Because of the sort order
+
+                        // Chop out the smaller range from the larger range, then insert into the stack in order
+                        let larger_range_without_smaller_range = SymbolRange::new(smaller_range.highest.next(), larger_range.highest.clone());
+
+                        to_process.push(smaller_range);
+
+                        if let Err(insertion_pos) = to_process.binary_search_by(|test_range| { SymbolMap::order_ranges(&larger_range_without_smaller_range, test_range) }) {
+                            to_process.insert(insertion_pos, larger_range_without_smaller_range);
+                        }
+                    } else {
+                        // There's a range from the lowest of the first range to the lowest of the second ranges
+                        result.push(SymbolRange::new(might_overlap.lowest.clone(), overlap_with.lowest.prev()));
+
+                        // Chop out the bit we just pushed from might_overlap and push back both ranges
+                        to_process.push(overlap_with.clone());
+                        to_process.push(SymbolRange::new(overlap_with.lowest, might_overlap.highest));
+                    }
+                }
+            } else {
+                // Last range should never overlap
+                result.push(might_overlap);
+            }
         }
 
-        if range_symbols.len() > 1 {
-            // Last item is always inclusive
-            result.push(SymbolRange::new(range_symbols[range_symbols.len()-2].clone(), range_symbols[range_symbols.len()-1].clone()));
-        }
-
-        // We already sorted everything, so bypass the usual 'add' method (which sorts as it goes)
+        // Ranges should already be sorted as we worked from left to right
         SymbolMap { ranges: result }
     }
 }
