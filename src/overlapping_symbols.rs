@@ -242,6 +242,20 @@ mod test {
     }
 
     #[test]
+    fn generate_correctly_for_non_overlapping_ranges() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 1));
+        map.add_range(&SymbolRange::new(2, 4));
+
+        let non_overlapping = map.to_non_overlapping_map();
+
+        let all = non_overlapping.find_overlapping_ranges(&SymbolRange::new(0, 10));
+
+        assert!(all == vec![&SymbolRange::new(0, 1), &SymbolRange::new(2, 4)]);
+    }
+
+    #[test]
     fn generate_correctly_for_single_overlap() {
         let mut map = SymbolMap::new();
 
