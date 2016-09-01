@@ -64,7 +64,7 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
     /// Adds a range to those that are known about by this object
     ///
     pub fn add_range(&mut self, range: &SymbolRange<Symbol>) {
-        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(range, test_range) });
+        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(test_range, range) });
 
         // Insert the range if it is not already in the map
         if let Err(insertion_pos) = existing {
@@ -79,7 +79,7 @@ impl<Symbol: PartialOrd+Clone> SymbolMap<Symbol> {
         let mut result = vec![];
 
         // Find the first range that matches (or the insertion position, which should be the first range wit a lowest value higher than the target range)
-        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(range, test_range) });
+        let existing = self.ranges.binary_search_by(|test_range| { SymbolMap::order_ranges(test_range, range) });
 
         // Start returning values from here
         let mut pos = match existing {
@@ -144,6 +144,19 @@ mod test {
         assert!(bottom == vec![&SymbolRange::new(0, 4)]);
         assert!(all == vec![&SymbolRange::new(0, 4), &SymbolRange::new(2, 5), &SymbolRange::new(3, 6)]);
         assert!(top == vec![&SymbolRange::new(6, 6)]);
+    }
+
+    #[test]
+    fn can_lookup_mid_range() {
+        let mut map = SymbolMap::new();
+
+        map.add_range(&SymbolRange::new(0, 4));
+        map.add_range(&SymbolRange::new(5, 10));
+        map.add_range(&SymbolRange::new(11, 15));
+
+        let bottom = map.find_overlapping_ranges(&SymbolRange::new(1, 3));
+
+        assert!(bottom == vec![&SymbolRange::new(0, 4)]);
     }
 
     #[test]
