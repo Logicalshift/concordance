@@ -31,6 +31,7 @@ pub use self::regular_pattern::*;
 pub use self::dfa_builder::*;
 pub use self::symbol_range_dfa::*;
 pub use self::dfa_compiler::*;
+pub use self::prepare::*;
 
 pub mod countable;
 pub mod symbol_range;
@@ -44,3 +45,4 @@ pub mod regular_pattern;
 pub mod dfa_builder;
 pub mod symbol_range_dfa;
 pub mod dfa_compiler;
+pub mod prepare;
