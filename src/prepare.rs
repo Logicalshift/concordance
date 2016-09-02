@@ -38,7 +38,7 @@ use super::dfa_compiler::*;
 /// Can be applied to patterns and other objects in order to match them
 ///
 pub trait PrepareToMatch<As> where As: Sized {
-    fn prepare_to_match(self) -> As where Self: Sized;
+    fn prepare_to_match(self) -> As;
 }
 
 impl<InputSymbol: Clone+PartialOrd+Countable, OutputSymbol: Ord+Clone> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
