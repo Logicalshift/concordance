@@ -70,3 +70,16 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 
     matches_symbol_range(&matcher, &mut reader)
 }
+
+///
+/// Matches a source stream against a pattern
+///
+pub fn matches_prepared<'a, Symbol, OutputSymbol, Reader, Source>(source: Source, matcher: &SymbolRangeDfa<Symbol, OutputSymbol>) -> Option<usize>
+where   Reader: SymbolReader<Symbol>+'a
+,       Source: SymbolSource<'a, Symbol, SymbolReader=Reader>
+,       Symbol: PartialOrd
+,       OutputSymbol: 'static {
+    let mut reader = source.read_symbols();
+
+    matches_symbol_range(&matcher, &mut reader)
+}
