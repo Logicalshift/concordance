@@ -254,7 +254,7 @@ mod test {
         let state_machine = DfaCompiler::build(ndfa, builder);
 
         // Read back 'abc' manually
-        let mut state = More(state_machine.start());
+        let mut state = state_machine.start();
         let mut input = "abc".read_symbols();
 
         while let More(this_state) = state {
@@ -288,7 +288,7 @@ mod test {
         println!("{:?}", state_machine);
 
         // Read back 'ba' manually
-        let mut state = More(state_machine.start());
+        let mut state = state_machine.start();
         let mut input = "ba".read_symbols();
 
         while let More(this_state) = state {
@@ -311,7 +311,7 @@ mod test {
         }
 
         // Read back 'bb' manually
-        state = More(state_machine.start());
+        state = state_machine.start();
         input = "bb".read_symbols();
 
         while let More(this_state) = state {

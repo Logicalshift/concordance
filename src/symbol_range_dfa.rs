@@ -147,9 +147,9 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
 impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
 
-    fn start(&'a self) -> Self::State {
+    fn start(&'a self) -> MatchAction<'a, OutputSymbol, Self::State> {
         // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
-        SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self }
+        More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
     }
 }
 
@@ -244,8 +244,11 @@ mod test {
         let state_machine = builder.build();
 
         // Run the first state
-        let start_state = state_machine.start();
-        let mut action  = start_state.next(0);
+        let mut action = state_machine.start();
+
+        if let More(next_state) = action {
+            action = next_state.next(0);
+        }
 
         if let More(next_state) = action {
             action = next_state.next(0);

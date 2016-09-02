@@ -26,7 +26,7 @@ use super::countable::*;
 fn matches_symbol_range<'a, InputSymbol: PartialOrd, OutputSymbol: 'a, Matcher>(dfa: &'a Matcher, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize>
 where Matcher: PatternMatcher<'a, InputSymbol, OutputSymbol> {
     // Run until there are no more states
-    let mut current_state = More(dfa.start());
+    let mut current_state = dfa.start();
 
     while let More(this_state) = current_state {
         let next_state = 
