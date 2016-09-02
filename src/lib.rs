@@ -15,9 +15,7 @@
 //
 
 //!
-//! # NDFA
-//!
-//! NDFA is a library for working with deterministic and non-deterministic finite-state automata.
+//! A library for working with deterministic and non-deterministic finite-state automata.
 //!
 
 pub use self::countable::*;

@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Matches
-//!
 //! These functions deal with establishing how much of a particular stream (or string) matches a particular pattern. The
 //! most important function is `matches`, which takes a stream and a pattern and returns the number of characters from the
 //! stream that matches the pattern. Use it like this:

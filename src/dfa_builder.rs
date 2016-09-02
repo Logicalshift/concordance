@@ -15,9 +15,11 @@
 //
 
 //!
-//! # DFA builder
+//! The DFA builder trait is implemented by classes that initialise DFAs. Deterministic Finite Automata can act as pattern
+//! matchers: for any given state, they only have a single possible transition for each input symbol. They can be efficiently
+//! implemented using a table-based approach.
 //!
-//! The DFA builder trait is implemented by classes that initialise DFAs. 
+//! The main type of DFA that can be built using this trait is the `SymbolRangeDfa`.
 //!
 
 use super::state_machine::*;

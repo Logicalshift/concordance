@@ -15,10 +15,11 @@
 //
 
 //!
-//! # Countable
-//!
 //! This is similar to the unstable `Step` trait. It's used for values that are countable; that is, which have a clear following
 //! and previous value. Unlike `Step` we have an implementation for `char`, which is useful for where we want to match strings.
+//!
+//! Symbols used as input to the range-based DFAs must implement the `Countable` trait, which is needed to generate non-overlapping
+//! ranges.
 //!
 
 // TODO: could make next/prev return Option<Self> which would let us deal with max/min values. However, we use this internally

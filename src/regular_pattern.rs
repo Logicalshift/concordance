@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Regular patterns
-//!
 //! This provides a data structure, `Pattern<Symbol>` representing a matching pattern in a regular language. This is a 
 //! more generalised form of a regular expression as it supports symbol types other than simple strings. A pattern using 
 //! the `char` symbol has identical expressive power to a regular expression.

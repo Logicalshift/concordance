@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Pattern matcher
-//!
 //! The Matcher trait is implemented by objects that can match patterns against the left-hand side of a stream. It's a fairly
 //! baseline implementation: it's up to the caller to implement things like rewinding in order to perform tokenisation. That is,
 //! Matchers are greedy and may (indeed, are likely to) consume more characters than the longest match while trying to find

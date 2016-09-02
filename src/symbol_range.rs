@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Symbol range
-//!
 //! It's quite common to want to match ranges of symbols (most particularly, 'all' symbols but also things like all upper-case
 //! characters). It would be inefficient to store all of the transitions represented by one of these transitions on a per-symbol
 //! basis, and impossible for some symbol sets (consider a state machine working on u32s). Instead, transitions are stored as

@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Prepare
-//!
 //! If a pattern needs to be matched against many different things, it can be prepared in order to generate an object that can
 //! be used many times without the delay of generating a DFA.
 //!

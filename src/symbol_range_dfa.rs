@@ -15,8 +15,6 @@
 //
 
 //!
-//! # RangeDfa
-//!
 //! A DFA that matches transitions against symbol ranges.
 //!
 

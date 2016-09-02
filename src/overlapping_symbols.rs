@@ -14,6 +14,29 @@
 //   limitations under the License.
 //
 
+//!
+//! Functions for mapping sets of symbol ranges onto other sets of symbol ranges.
+//!
+//! The most important thing that this does is deal with changing a set of overlapping symbol ranges into a set
+//! of non-overlapping ranges. This is needed because the DFA compiler assumes that symbols are unique. The
+//! function `Ndfa::fix_overlapping_ranges` in particular makes use of this to generate an NDFA suitable as input
+//! to the DFA compiler.
+//!
+//! # Example
+//!
+//! ```
+//! # use ndfa::*;
+//! let map = SymbolMap::new();
+//!
+//! map.add_range(&SymbolRange::new(0, 10));
+//! map.add_range(&SymbolRange::new(5, 15));
+//!
+//! let without_overlaps = map.to_non_overlapping_map();
+//!
+//! let ranges = without_overlaps.find_overlapping_ranges(&SymbolRange::new(0, 10)); // 0-4, 5-10
+//! ```
+//!
+
 use std::cmp::Ordering;
 
 use super::symbol_range::*;

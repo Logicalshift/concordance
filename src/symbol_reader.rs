@@ -15,8 +15,6 @@
 //
 
 //!
-//! # Symbol reader
-//!
 //! A symbol reader reads one symbol at a time from a source
 //!
 

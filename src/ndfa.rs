@@ -15,8 +15,6 @@
 //
 
 //!
-//! # NDFA
-//!
 //! The acronym NDFA stands for 'Non-Deterministic Finite Automaton'. An NDFA is a state machine where each state can have
 //! transitions for more than one target state - this allows it to be in more than one state at once, which is the property
 //! that makes it non-deterministic.

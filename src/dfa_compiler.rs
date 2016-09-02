@@ -15,8 +15,6 @@
 //
 
 //!
-//! # DFA compiler
-//!
 //! The DFA compiler converts NDFAs into DFAs, using a DFA builder.
 //!
 
