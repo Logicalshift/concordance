@@ -56,7 +56,6 @@ use super::prepare::*;
 /// This call is useful for cases where there is more than one output symbol (as the output symbol that was matched can be retrieved)
 /// or for working with pattern matchers other than the default one.
 ///
-/// Usage:
 /// ```
 /// # use ndfa::*;
 /// let input_string = "abcabc";
@@ -64,7 +63,7 @@ use super::prepare::*;
 /// let matcher      = pattern.prepare_to_match();
 ///
 /// let match_result = match_pattern(matcher.start(), &mut input_string.read_symbols()); // == Accept(6, &true)
-/// # assert!(match_result == Accept(6, &true));
+/// # assert!(match match_result { Accept(count, val) => count == 6 && val == &true, _ => false });
 /// ```
 ///
 pub fn match_pattern<'a, InputSymbol: Ord, OutputSymbol, State>(start_state: MatchAction<'a, OutputSymbol, State>, symbol_reader: &mut SymbolReader<InputSymbol>) -> MatchAction<'a, OutputSymbol, State>
