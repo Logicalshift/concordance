@@ -15,7 +15,7 @@
 //
 
 //!
-//! # Matcher
+//! # Pattern matcher
 //!
 //! The Matcher trait is implemented by objects that can match patterns against the left-hand side of a stream. It's a fairly
 //! baseline implementation: it's up to the caller to implement things like rewinding in order to perform tokenisation. That is,
@@ -23,18 +23,25 @@
 //! a longer one.
 //!
 
+/*
+ * Trait not implemented due to Rust type system limitations
+ *
+ * We want to write type State<'a> and have that in MatchAction, otherwise states need to live too long to be useful.
+ *
+
 ///
 /// Matcher that can read an input stream of type `Symbol` and find the longest matching pattern, which it will identify using
 /// `OutputSymbol`
 ///
-pub trait PatternMatcher<'a, InputSymbol, OutputSymbol> {
-    type State: MatchingState<'a, InputSymbol, OutputSymbol>;
+pub trait PatternMatcher<InputSymbol, OutputSymbol> {
+    type State;
 
     ///
     /// Creates a state that begins matching this pattern
     ///
-    fn start(&'a self) -> MatchAction<'a, OutputSymbol, Self::State>;
+    fn start<'a>(&'a self) -> MatchAction<'a, OutputSymbol, Self::State>;
 }
+*/
 
 ///
 /// Action to be taken after a matcher receives a symbol
