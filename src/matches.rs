@@ -17,14 +17,30 @@
 //!
 //! # Matches
 //!
+//! These functions deal with establishing how much of a particular stream (or string) matches a particular pattern. The
+//! most important function is `matches`, which takes a stream and a pattern and returns the number of characters from the
+//! stream that matches the pattern. Use it like this:
+//!
 //! ```
 //! # use ndfa::*;
-//! # assert!(matches("abcabc", "abc".repeat_forever(1)).is_some());
+//! # assert!(matches("abcabc", "abc".repeat_forever(1)) == Some(6));
 //! # assert!(matches("abcabcabc", "abc".repeat_forever(1)).is_some());
 //! # assert!(matches("abc", "abc").is_some());
 //! # assert!(matches("def", "abc".repeat_forever(1)).is_none());
-//! if matches("abcabc", "abc".repeat_forever(1)).is_some() { /* ... */ }
+//! if matches("abcabc", "abc".repeat_forever(1)) == Some(6) { /* ... */ }
 //! ```
+//!
+//! To determine if a string exactly matches a pattern, compare to the string length like this:
+//!
+//! ```
+//! # use ndfa::*;
+//! let input_string = "abcabc";
+//! let pattern      = "abc".repeat_forever(1);
+//!
+//! if matches(input_string, pattern) == Some(input_string.len()) { }
+//! # assert!(matches(input_string, "abc".repeat_forever(1)) == Some(input_string.len()));
+//! ```
+//!
 
 use super::symbol_range_dfa::*;
 use super::symbol_reader::*;
@@ -32,23 +48,26 @@ use super::pattern_matcher::*;
 use super::prepare::*;
 
 ///
-/// Runs a pattern matcher against a stream, and returns the number of characters matching if it accepted the stream
-///
-fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
-    // Run the DFA
-    let final_state = run_dfa(dfa.start(), symbol_reader);
-
-    if let Accept(count, _) = final_state {
-        Some(count)
-    } else {
-        None
-    }
-}
-
-///
 /// Runs a DFA against a symbol stream and returns its final state
 ///
-pub fn run_dfa<'a, InputSymbol: Ord, OutputSymbol, State>(start_state: MatchAction<'a, OutputSymbol, State>, symbol_reader: &mut SymbolReader<InputSymbol>) -> MatchAction<'a, OutputSymbol, State>
+/// This takes a DFA match action as an initial state (such as that returned by `SymbolRangeDfa::start()`) and runs it until it accepts
+/// or rejects the pattern passed to it.
+///
+/// This call is useful for cases where there is more than one output symbol (as the output symbol that was matched can be retrieved)
+/// or for working with pattern matchers other than the default one.
+///
+/// Usage:
+/// ```
+/// # use ndfa::*;
+/// let input_string = "abcabc";
+/// let pattern      = "abc".repeat_forever(1);
+/// let matcher      = pattern.prepare_to_match();
+///
+/// let match_result = match_pattern(matcher.start(), &mut input_string.read_symbols()); // == Accept(6, &true)
+/// # assert!(match_result == Accept(6, &true));
+/// ```
+///
+pub fn match_pattern<'a, InputSymbol: Ord, OutputSymbol, State>(start_state: MatchAction<'a, OutputSymbol, State>, symbol_reader: &mut SymbolReader<InputSymbol>) -> MatchAction<'a, OutputSymbol, State>
 where State: MatchingState<'a, InputSymbol, OutputSymbol> {
     let mut current_state = start_state;
 
@@ -67,7 +86,33 @@ where State: MatchingState<'a, InputSymbol, OutputSymbol> {
 }
 
 ///
+/// Runs a pattern matcher against a stream, and returns the number of characters matching if it accepted the stream
+///
+fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
+    // Run the DFA
+    let final_state = match_pattern(dfa.start(), symbol_reader);
+
+    if let Accept(count, _) = final_state {
+        Some(count)
+    } else {
+        None
+    }
+}
+
+///
 /// Matches a source stream against a pattern
+///
+/// This is the basic pattern matcher. It matches against the left-hand side of the source, and if there is a string of any
+/// length that can match the passed in pattern it will return the length of that string. Pattern matchers should be greedy,
+/// so this will return the length of the longest string that can match the given pattern.
+///
+/// ```
+/// # use ndfa::*;
+/// matches("abc", "abc");                      // Returns Some(3)
+/// matches("abcabc", "abc");                   // Also returns Some(3) as 'abc' matches the pattern
+/// matches("abcabc", "abc".repeat_forever(0)); // Returns Some(6)
+/// matches("ab", "abc");                       // Doesn't match: returns None
+/// ```
 ///
 pub fn matches<'a, Symbol, OutputSymbol, Prepare, Reader, Source>(source: Source, pattern: Prepare) -> Option<usize>
 where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
@@ -82,7 +127,10 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 }
 
 ///
-/// Matches a source stream against a pattern
+/// Matches a source stream against a prepared pattern
+///
+/// If it's necessary to match a pattern against a lot of different things, then preparing it by calling `pattern.prepare_to_match()`
+/// will increase the performance of the matcher for every match after the first one. This call is otherwise identical to `matches`.
 ///
 pub fn matches_prepared<'a, Symbol, OutputSymbol, Reader, Source>(source: Source, matcher: &SymbolRangeDfa<Symbol, OutputSymbol>) -> Option<usize>
 where   Reader: SymbolReader<Symbol>+'a
@@ -101,6 +149,15 @@ mod test {
     #[test]
     fn match_multiple_repeats() {
         assert!(matches("abcabc", "abc".repeat_forever(1)).is_some());
+    }
+
+    #[test]
+    fn match_prepared() {
+        let prepared = "abc".repeat_forever(1).prepare_to_match();
+
+        assert!(matches_prepared("abcabc", &prepared) == Some(6));
+        assert!(matches_prepared("abc", &prepared) == Some(3));
+        assert!(matches_prepared("abcabcabc", &prepared) == Some(9));
     }
 
     #[test]
