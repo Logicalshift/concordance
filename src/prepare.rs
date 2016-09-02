@@ -24,6 +24,9 @@
 //! # use ndfa::*;
 //! let match_abcs      = "abc".prepare_to_match();
 //! let match_many_abcs = "abc".repeat_forever(1).prepare_to_match();
+//! 
+//! if match("abcabc", match_many_abcs).is_some() { /* ... */ }
+//! # assert!(match("abc", match_many_abcs).is_some());
 //! ```
 //!
 
