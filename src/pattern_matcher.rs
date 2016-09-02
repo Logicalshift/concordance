@@ -62,6 +62,18 @@ pub enum MatchAction<'a, OutputSymbol: 'static, State: ?Sized> {
     More(State)
 }
 
+impl<'a, OutputSymbol: PartialEq+'static, State: ?Sized> MatchAction<'a, OutputSymbol, State> {
+    ///
+    /// Returns true if this is an accepting state with the specified symbol
+    ///
+    pub fn is_accepted(&self, symbol: &OutputSymbol) -> bool {
+        match self {
+            &Accept(_, sym) => sym == symbol,
+            _ => false
+        }
+    }
+}
+
 ///
 /// Represents a state during a pattern matching operation
 ///
