@@ -140,9 +140,9 @@ impl<Symbol: Clone+PartialOrd+Countable> Pattern<Symbol> {
 
                 let mut repeat_state = start_state;
 
-                for repeat in 0..(count+2) {
+                for repeat in 0..(count+1) {
                     // The last state can also be the target state
-                    if repeat == count+1 {
+                    if repeat == *count {
                         state_machine.join_states(repeat_state, target_state)
                     }
 
@@ -151,7 +151,7 @@ impl<Symbol: Clone+PartialOrd+Countable> Pattern<Symbol> {
                     repeat_state = pattern.compile(state_machine, repeat_state);
 
                     // The last state needs to repeat, so turn it into a loop
-                    if repeat == count + 1 {
+                    if repeat == *count {
                         state_machine.join_states(repeat_state, initial_state);
                     }
                 }
