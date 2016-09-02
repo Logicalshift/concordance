@@ -131,6 +131,15 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 /// If it's necessary to match a pattern against a lot of different things, then preparing it by calling `pattern.prepare_to_match()`
 /// will increase the performance of the matcher for every match after the first one. This call is otherwise identical to `matches`.
 ///
+/// ```
+/// # use ndfa::*;
+/// let prepared = "abc".repeat_forever(1).prepare_to_match();
+///
+/// matches_prepared("abcabc", &prepared);      // == Some(6));
+/// matches_prepared("abc", &prepared);         // == Some(3));
+/// matches_prepared("abcabcabc", &prepared);   // == Some(9));
+/// ```
+///
 pub fn matches_prepared<'a, Symbol, OutputSymbol, Reader, Source>(source: Source, matcher: &SymbolRangeDfa<Symbol, OutputSymbol>) -> Option<usize>
 where   Reader: SymbolReader<Symbol>+'a
 ,       Source: SymbolSource<'a, Symbol, SymbolReader=Reader>
