@@ -143,9 +143,9 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 /// # use ndfa::*;
 /// let prepared = "abc".repeat_forever(1).prepare_to_match();
 ///
-/// matches_prepared("abcabc", &prepared);      // == Some(6))
-/// matches_prepared("abc", &prepared);         // == Some(3))
-/// matches_prepared("abcabcabc", &prepared);   // == Some(9))
+/// matches_prepared("abcabc", &prepared);      // == Some(6)
+/// matches_prepared("abc", &prepared);         // == Some(3)
+/// matches_prepared("abcabcabc", &prepared);   // == Some(9)
 /// ```
 ///
 pub fn matches_prepared<'a, Symbol, OutputSymbol, Reader, Source>(source: Source, matcher: &SymbolRangeDfa<Symbol, OutputSymbol>) -> Option<usize>
