@@ -118,8 +118,8 @@ mod test {
     fn match_limited_range() {
         assert!(matches("abc", "abc".repeat(2..4)).is_none());
         assert!(matches("abcabc", "abc".repeat(2..4)).is_some());
-        assert!(matches("abcabcabc", "abc".repeat(2..4)).is_some());
-        // assert!(matches("abcabcabcabc", "abc".repeat(2..4)).is_none()); -- need to use countable, so this is broken
+        assert!(matches("abcabcabc", "abc".repeat(2..4)) == Some(3*3));
+        assert!(matches("abcabcabcabc", "abc".repeat(2..4)) == Some(3*3));
     }
 
     /* -- BROKEN

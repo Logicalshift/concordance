@@ -440,22 +440,6 @@ mod test {
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
 
-    /* -- TODO: needs inclusive ranges to be supported
-    #[test]
-    fn can_convert_range_to_pattern() {
-        let pattern = ('a'...'z').into_pattern();
-
-        assert!(pattern == MatchRange('a', 'z'));
-    }
-
-    #[test]
-    fn can_convert_float_range_to_pattern() {
-        let pattern = (1.0...2.0).into_pattern();
-
-        assert!(pattern == MatchRange(1.0, 2.0));
-    }
-    */
-
     #[test]
     fn can_repeat_pattern() {
         let pattern = "abc".repeat(1..2);
