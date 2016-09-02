@@ -83,3 +83,23 @@ where   Reader: SymbolReader<Symbol>+'a
 
     matches_symbol_range(&matcher, &mut reader)
 }
+
+#[cfg(test)]
+mod test {
+    use super::super::*;
+
+    #[test]
+    fn match_multiple_repeats() {
+        assert!(matches("abcabc", "abc".repeat_forever(1)).is_some());
+    }
+
+    #[test]
+    fn match_single_repeat() {
+        assert!(matches("abc", "abc".repeat_forever(1)).is_some());
+    }
+
+    #[test]
+    fn match_zero_repeats() {
+        assert!(matches("", "abc".repeat_forever(0)).is_some());
+    }
+}
