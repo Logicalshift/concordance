@@ -144,10 +144,8 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
     state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> PatternMatcher<'a, InputSymbol, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
-    type State = SymbolRangeState<'a, InputSymbol, OutputSymbol>;
-
-    fn start(&'a self) -> MatchAction<'a, OutputSymbol, Self::State> {
+impl<InputSymbol: PartialOrd, OutputSymbol> SymbolRangeDfa<InputSymbol, OutputSymbol> {
+    pub fn start<'a>(&'a self) -> MatchAction<'a, OutputSymbol, SymbolRangeState<'a, InputSymbol, OutputSymbol>> {
         // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
         More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
     }

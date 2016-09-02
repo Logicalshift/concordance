@@ -14,17 +14,27 @@
 //   limitations under the License.
 //
 
+//!
+//! # Matches
+//!
+//! ```
+//! # use ndfa::*;
+//! # assert!(matches("abcabc", "abc".repeat_forever(1)).is_some());
+//! # assert!(matches("abcabcabc", "abc".repeat_forever(1)).is_some());
+//! # assert!(matches("abc", "abc").is_some());
+//! # assert!(matches("def", "abc".repeat_forever(1)).is_none());
+//! if matches("abcabc", "abc".repeat_forever(1)).is_some() { /* ... */ }
+//! ```
+
 use super::symbol_range_dfa::*;
 use super::symbol_reader::*;
 use super::pattern_matcher::*;
 use super::prepare::*;
-use super::countable::*;
 
 ///
 /// Runs a pattern matcher against a stream, and returns the number of characters matching if it accepted the stream
 ///
-fn matches_symbol_range<'a, InputSymbol: PartialOrd, OutputSymbol: 'a, Matcher>(dfa: &'a Matcher, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize>
-where Matcher: PatternMatcher<'a, InputSymbol, OutputSymbol> {
+fn matches_symbol_range<InputSymbol: PartialOrd, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
     // Run until there are no more states
     let mut current_state = dfa.start();
 
@@ -47,24 +57,16 @@ where Matcher: PatternMatcher<'a, InputSymbol, OutputSymbol> {
 }
 
 ///
-/// Trait implemented by types that can be matched against a pattern
+/// Matches a source stream against a pattern
 ///
-pub trait Matches<Pattern> {
-    ///
-    /// Matches a pattern against a source, and returns the number of characters matching if it accepted the stream
-    ///
-    fn matches(src: Self, pattern: Pattern) -> Option<usize>
-        where Self: Sized, Pattern: Sized;
-}
+pub fn matches<'a, Symbol, OutputSymbol, Prepare, Reader, Source>(source: Source, pattern: Prepare) -> Option<usize>
+where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
+,       Reader: SymbolReader<Symbol>+'a
+,       Source: SymbolSource<'a, Symbol, SymbolReader=Reader>
+,       Symbol: PartialOrd
+,       OutputSymbol: 'static {
+    let matcher    = pattern.prepare_to_match();
+    let mut reader = source.read_symbols();
 
-impl<'a, InputSymbol: PartialOrd, OutputSymbol: 'a> Matches<&'a SymbolRangeDfa<InputSymbol, OutputSymbol>> for &'a mut SymbolReader<InputSymbol> {
-    fn matches(src: &'a mut SymbolReader<InputSymbol>, pattern: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>) -> Option<usize> {
-        matches_symbol_range(pattern, src)
-    }
-}
-
-impl<'a, OutputSymbol: 'a> Matches<&'a SymbolRangeDfa<char, OutputSymbol>> for &'a str {
-    fn matches(src: &'a str, pattern: &'a SymbolRangeDfa<char, OutputSymbol>) -> Option<usize> {
-        matches_symbol_range(pattern, &mut src.read_symbols())
-    }
+    matches_symbol_range(&matcher, &mut reader)
 }
