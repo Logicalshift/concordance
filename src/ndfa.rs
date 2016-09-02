@@ -107,7 +107,7 @@ impl<InputSymbol: Clone, OutputSymbol> Ndfa<InputSymbol, OutputSymbol> {
     }
 }
 
-impl<Symbol: PartialOrd+Clone+Countable, OutputSymbol> Ndfa<SymbolRange<Symbol>, OutputSymbol> {
+impl<Symbol: Ord+Clone+Countable, OutputSymbol> Ndfa<SymbolRange<Symbol>, OutputSymbol> {
     ///
     /// Modifies this NDFA so that all ranges used in all transitions are unique and have no overlapping ranges
     ///

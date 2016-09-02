@@ -22,12 +22,12 @@ use super::countable::*;
 ///
 /// A symbol map maps from one set of symbol ranges to another
 ///
-pub struct SymbolMap<Symbol: PartialOrd+Clone+Countable> {
+pub struct SymbolMap<Symbol: Ord+Clone+Countable> {
     // Ranges in this symbol map
     ranges: Vec<SymbolRange<Symbol>>,
 }
 
-impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
+impl<Symbol: Ord+Clone+Countable> SymbolMap<Symbol> {
     ///
     /// Creates a new symbol map
     ///
@@ -40,11 +40,7 @@ impl<Symbol: PartialOrd+Clone+Countable> SymbolMap<Symbol> {
     ///
     #[inline]
     fn order_symbols(a: &Symbol, b: &Symbol) -> Ordering {
-        if let Some(order) = a.partial_cmp(b) {
-            order
-        } else {
-            Ordering::Equal
-        }
+        a.cmp(b)
     }
 
     ///

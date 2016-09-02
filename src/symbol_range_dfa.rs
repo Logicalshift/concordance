@@ -29,7 +29,7 @@ use super::state_machine::*;
 /// DFA that decides on transitions based on non-overlapping, sorted lists of input symbols
 ///
 #[derive(Debug)]
-pub struct SymbolRangeDfa<InputSymbol: PartialOrd, OutputSymbol> {
+pub struct SymbolRangeDfa<InputSymbol: Ord, OutputSymbol> {
     //
     // Indexes of where each state starts in the transition table (it ends at the start of the next state)
     //
@@ -49,19 +49,19 @@ pub struct SymbolRangeDfa<InputSymbol: PartialOrd, OutputSymbol> {
 ///
 /// DFA builder that creates RangeDfas
 ///
-pub struct SymbolRangeDfaBuilder<InputSymbol: PartialOrd, OutputSymbol> {
+pub struct SymbolRangeDfaBuilder<InputSymbol: Ord, OutputSymbol> {
     states: Vec<usize>,
     transitions: Vec<(SymbolRange<InputSymbol>, StateId)>,
     accept: Vec<Option<OutputSymbol>>
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord, OutputSymbol> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
     pub fn new() -> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
         SymbolRangeDfaBuilder { states: vec![], transitions: vec![], accept: vec![] }
     }
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>, OutputSymbol, SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>, OutputSymbol, SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
     fn start_state(&mut self) {
         // Begin the next state
         self.states.push(self.transitions.len());
@@ -89,7 +89,7 @@ impl<InputSymbol: PartialOrd, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>,
     }
 }
 
-impl<InputSymbol: PartialOrd+Clone, OutputSymbol> StateMachine<SymbolRange<InputSymbol>, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord+Clone, OutputSymbol> StateMachine<SymbolRange<InputSymbol>, OutputSymbol> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     ///
     /// Returns the number of states in this state machine
     ///
@@ -130,7 +130,7 @@ impl<InputSymbol: PartialOrd+Clone, OutputSymbol> StateMachine<SymbolRange<Input
 /// A state of a symbol range state machine
 ///
 #[derive(Clone)]
-pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
+pub struct SymbolRangeState<'a, InputSymbol: Ord+'a, OutputSymbol: 'a> {
     // The current state of the state machine
     state: StateId,
 
@@ -144,14 +144,14 @@ pub struct SymbolRangeState<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> {
     state_machine: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>
 }
 
-impl<InputSymbol: PartialOrd, OutputSymbol> SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord, OutputSymbol> SymbolRangeDfa<InputSymbol, OutputSymbol> {
     pub fn start<'a>(&'a self) -> MatchAction<'a, OutputSymbol, SymbolRangeState<'a, InputSymbol, OutputSymbol>> {
         // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
         More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
     }
 }
 
-impl<'a, InputSymbol: PartialOrd+'a, OutputSymbol: 'a> MatchingState<'a, InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
+impl<'a, InputSymbol: Ord+'a, OutputSymbol: 'a> MatchingState<'a, InputSymbol, OutputSymbol> for SymbolRangeState<'a, InputSymbol, OutputSymbol> {
     fn next(self, symbol: InputSymbol) -> MatchAction<'a, OutputSymbol, Self> {
         // The transition range is defined by the current state
         let start_transition    = self.state_machine.states[self.state as usize];

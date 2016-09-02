@@ -104,7 +104,7 @@ pub enum Pattern<Symbol: Clone> {
     MatchAny(Vec<Pattern<Symbol>>)
 }
 
-impl<Symbol: Clone+PartialOrd+Countable> Pattern<Symbol> {
+impl<Symbol: Clone+Ord+Countable> Pattern<Symbol> {
     ///
     /// Compiles this pattern onto a state machine, returning the accepting symbol
     ///
@@ -207,7 +207,7 @@ impl<Symbol: Clone+PartialOrd+Countable> Pattern<Symbol> {
     }
 }
 
-impl<Symbol: Clone+PartialOrd+Countable+'static> ToNdfa<SymbolRange<Symbol>> for Pattern<Symbol> {
+impl<Symbol: Clone+Ord+Countable+'static> ToNdfa<SymbolRange<Symbol>> for Pattern<Symbol> {
     fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         let mut result  = Ndfa::new();
         let end_state   = self.compile(&mut result, 0);
@@ -219,7 +219,7 @@ impl<Symbol: Clone+PartialOrd+Countable+'static> ToNdfa<SymbolRange<Symbol>> for
     }
 }
 
-impl<Symbol: Clone+PartialOrd+Countable+'static> ToNdfa<SymbolRange<Symbol>> for ToPattern<Symbol> {
+impl<Symbol: Clone+Ord+Countable+'static> ToNdfa<SymbolRange<Symbol>> for ToPattern<Symbol> {
     fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
@@ -231,7 +231,7 @@ impl ToNdfa<SymbolRange<char>> for str {
     }
 }
 
-impl<Symbol: Clone+PartialOrd+Countable+'static> ToNdfa<SymbolRange<Symbol>> for [Symbol] {
+impl<Symbol: Clone+Ord+Countable+'static> ToNdfa<SymbolRange<Symbol>> for [Symbol] {
     fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }

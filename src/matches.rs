@@ -34,7 +34,7 @@ use super::prepare::*;
 ///
 /// Runs a pattern matcher against a stream, and returns the number of characters matching if it accepted the stream
 ///
-fn matches_symbol_range<InputSymbol: PartialOrd, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
+fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
     // Run until there are no more states
     let mut current_state = dfa.start();
 
@@ -63,7 +63,7 @@ pub fn matches<'a, Symbol, OutputSymbol, Prepare, Reader, Source>(source: Source
 where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 ,       Reader: SymbolReader<Symbol>+'a
 ,       Source: SymbolSource<'a, Symbol, SymbolReader=Reader>
-,       Symbol: PartialOrd
+,       Symbol: Ord
 ,       OutputSymbol: 'static {
     let matcher    = pattern.prepare_to_match();
     let mut reader = source.read_symbols();
@@ -77,7 +77,7 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 pub fn matches_prepared<'a, Symbol, OutputSymbol, Reader, Source>(source: Source, matcher: &SymbolRangeDfa<Symbol, OutputSymbol>) -> Option<usize>
 where   Reader: SymbolReader<Symbol>+'a
 ,       Source: SymbolSource<'a, Symbol, SymbolReader=Reader>
-,       Symbol: PartialOrd
+,       Symbol: Ord
 ,       OutputSymbol: 'static {
     let mut reader = source.read_symbols();
 

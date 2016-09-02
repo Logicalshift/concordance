@@ -44,7 +44,7 @@ pub trait PrepareToMatch<As> where As: Sized {
     fn prepare_to_match(self) -> As;
 }
 
-impl<InputSymbol: Clone+PartialOrd+Countable, OutputSymbol: Ord+Clone> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
+impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Ord+Clone> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
 for Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, OutputSymbol> {
@@ -55,7 +55,7 @@ for Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>> {
     }
 }
 
-impl<InputSymbol: Clone+PartialOrd+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
+impl<InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
 for Pattern<InputSymbol> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, bool> {
@@ -65,7 +65,7 @@ for Pattern<InputSymbol> {
     }
 }
 
-impl<'a, InputSymbol: Clone+PartialOrd+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
+impl<'a, InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
 for &'a ToPattern<InputSymbol> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, bool> {
@@ -75,7 +75,7 @@ for &'a ToPattern<InputSymbol> {
     }
 }
 
-impl<InputSymbol: Clone+PartialOrd+Countable, OutputSymbol> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Clone+Ord+Countable, OutputSymbol> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, OutputSymbol> {
         self

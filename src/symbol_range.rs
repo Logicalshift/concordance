@@ -33,7 +33,7 @@ use std::cmp::*;
 /// Represents a range of symbols
 ///
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct SymbolRange<Symbol: PartialOrd> {
+pub struct SymbolRange<Symbol: Ord> {
     ///
     /// Lowest symbol in the range
     ///
@@ -48,19 +48,26 @@ pub struct SymbolRange<Symbol: PartialOrd> {
     pub highest: Symbol
 }
 
-impl<Symbol: PartialOrd> PartialOrd for SymbolRange<Symbol> {
+impl<Symbol: Ord> PartialOrd for SymbolRange<Symbol> {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let lower = self.lowest.partial_cmp(&other.lowest);
+        Some(self.cmp(other))
+    }
+}
 
-        if lower == Some(Ordering::Equal) {
-            self.highest.partial_cmp(&other.highest)
+impl<Symbol: Ord> Ord for SymbolRange<Symbol> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let lower = self.lowest.cmp(&other.lowest);
+
+        if lower == Ordering::Equal {
+            self.highest.cmp(&other.highest)
         } else {
             lower
         }
     }
 }
 
-impl<Symbol: PartialOrd> SymbolRange<Symbol> {
+impl<Symbol: Ord> SymbolRange<Symbol> {
     ///
     /// Creates a new range covering everything between the specified two symbols
     ///
@@ -96,7 +103,7 @@ impl<Symbol: PartialOrd> SymbolRange<Symbol> {
     }
 }
 
-impl<Symbol: PartialOrd+Clone> SymbolRange<Symbol> {
+impl<Symbol: Ord+Clone> SymbolRange<Symbol> {
     ///
     /// Joins this range with another
     ///
@@ -132,11 +139,6 @@ mod test {
     #[test]
     fn overlaps_when_within() {
         assert!(SymbolRange::new(1, 4).overlaps(&SymbolRange::new(2, 3)));
-    }
-
-    #[test]
-    fn overlaps_when_within_float() {
-        assert!(SymbolRange::new(1.0, 4.0).overlaps(&SymbolRange::new(2.0, 3.0)));
     }
 
     #[test]
