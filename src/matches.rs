@@ -105,6 +105,14 @@ mod test {
         assert!(matches("abcabcabc", "abc".repeat_forever(0)).is_some());
     }
 
+    #[test]
+    fn match_with_zero_or_more_following() {
+        assert!(matches("abc", "abc".repeat_forever(0).append("def")).is_none());
+        assert!(matches("abcabc", "abc".repeat_forever(0).append("def")).is_none());
+
+        assert!(matches("abcdef", "abc".repeat_forever(0).append("def")).is_some());
+        assert!(matches("abcabcdef", "abc".repeat_forever(0).append("def")).is_some());
+    }
 
     #[test]
     fn match_limited_range() {
