@@ -72,6 +72,13 @@ for &'a ToPattern<InputSymbol> {
     }
 }
 
+impl<InputSymbol: Clone+PartialOrd+Countable, OutputSymbol> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfa<InputSymbol, OutputSymbol> {
+    #[inline]
+    fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, OutputSymbol> {
+        self
+    }
+}
+
 impl<'a> PrepareToMatch<SymbolRangeDfa<char, bool>> 
 for &'a str {
     #[inline]
