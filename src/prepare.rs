@@ -26,7 +26,7 @@
 //! let match_many_abcs = "abc".repeat_forever(1).prepare_to_match();
 //! 
 //! if matches_prepared("abcabc", &match_many_abcs).is_some() { /* ... */ }
-//! # assert!(matches_prepared("abc", &match_many_abcs).is_some());
+//! # assert!(matches_prepared("abcabc", &match_many_abcs).is_some());
 //! ```
 //!
 
