@@ -35,8 +35,22 @@ use super::prepare::*;
 /// Runs a pattern matcher against a stream, and returns the number of characters matching if it accepted the stream
 ///
 fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, symbol_reader: &mut SymbolReader<InputSymbol>) -> Option<usize> {
-    // Run until there are no more states
-    let mut current_state = dfa.start();
+    // Run the DFA
+    let final_state = run_dfa(dfa.start(), symbol_reader);
+
+    if let Accept(count, _) = final_state {
+        Some(count)
+    } else {
+        None
+    }
+}
+
+///
+/// Runs a DFA against a symbol stream and returns its final state
+///
+pub fn run_dfa<'a, InputSymbol: Ord, OutputSymbol, State>(start_state: MatchAction<'a, OutputSymbol, State>, symbol_reader: &mut SymbolReader<InputSymbol>) -> MatchAction<'a, OutputSymbol, State>
+where State: MatchingState<'a, InputSymbol, OutputSymbol> {
+    let mut current_state = start_state;
 
     while let More(this_state) = current_state {
         let next_state = 
@@ -49,11 +63,7 @@ fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRan
         current_state = next_state;
     }
 
-    if let Accept(count, _) = current_state {
-        Some(count)
-    } else {
-        None
-    }
+    current_state
 }
 
 ///
