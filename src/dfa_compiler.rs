@@ -15,7 +15,26 @@
 //
 
 //!
-//! The DFA compiler converts NDFAs into DFAs, using a DFA builder.
+//! The DFA compiler converts NDFAs into DFAs, using a DFA builder. Usually the `SymbolRangeDfaBuilder` would be used but the
+//! compiler can be used with any object implementing the `DfaBuilder` trait.
+//!
+//! The NDFA should not have any overlapping symbols, which is to say symbols that are not equal and yet could match the same
+//! input symbol. If the builder finds that two NDFA states have identical output symbols, then the builder will pick the symbol
+//! that compares as being lower as the final output symbol.
+//!
+//! Any NDFA can be converted into a DFA: if the NDFA can move to two states as the result of a particular input symbol, the DFA
+//! just needs a single new state representing both those possible states. In this way, the NDFA can be converted into a form where
+//! every input symbol only maps to a single transition.
+//!
+//! Normally the compiler isn't used directly: it's called by implementations of `PrepareToMatch`. It's useful for manually building
+//! DFAs for other purposes or for creating new types of state machine that aren't already in this library.
+//!
+//! ```
+//! let ndfa     = "abc".into_pattern().to_ndfa("Success");
+//! let builder  = SymbolRangeDfaBuilder::new();
+//!
+//! let state_machine = DfaCompiler::build(ndfa, builder);
+//! ```
 //!
 
 use std::marker::PhantomData;
