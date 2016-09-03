@@ -31,6 +31,7 @@ pub use self::dfa_compiler::*;
 pub use self::prepare::*;
 pub use self::matches::*;
 pub use self::tokenizer::*;
+pub use self::tape::*;
 
 pub mod countable;
 pub mod symbol_range;
@@ -46,3 +47,4 @@ pub mod dfa_compiler;
 pub mod prepare;
 pub mod matches;
 pub mod tokenizer;
+pub mod tape;
