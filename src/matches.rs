@@ -25,7 +25,7 @@
 //! # assert!(matches("abcabcabc", "abc".repeat_forever(1)).is_some());
 //! # assert!(matches("abc", "abc").is_some());
 //! # assert!(matches("def", "abc".repeat_forever(1)).is_none());
-//! if matches("abcabc", "abc".repeat_forever(1)) == Some(6) { /* ... */ }
+//! if matches("abcabc", "abc".repeat_forever(1)).is_some() { /* ... */ }
 //! ```
 //!
 //! To determine if a string exactly matches a pattern, compare to the string length like this:
