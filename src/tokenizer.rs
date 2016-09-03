@@ -121,4 +121,23 @@ mod test {
         assert!(match_pattern(matcher.start(), &mut "aaaaa".read_symbols()).is_accepted(&TestToken::AllAs));
         assert!(match_pattern(matcher.start(), &mut "bbbb".read_symbols()).is_accepted(&TestToken::AllBs));
     }
+
+    #[test]
+    fn clashes_producer_lower_tokens() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Abbb,
+            Aaab
+        }
+
+        let mut tokenizer = Tokenizer::new();
+        tokenizer.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
+        tokenizer.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
+
+        let matcher = tokenizer.prepare_to_match();
+
+        assert!(match_pattern(matcher.start(), &mut "aaab".read_symbols()).is_accepted(&TestToken::Aaab));
+        assert!(match_pattern(matcher.start(), &mut "ab".read_symbols()).is_accepted(&TestToken::Abbb));
+        assert!(match_pattern(matcher.start(), &mut "abbbb".read_symbols()).is_accepted(&TestToken::Abbb));
+    }
 }
