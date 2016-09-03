@@ -148,7 +148,11 @@ impl<InputSymbol: Ord, OutputSymbol> SymbolRangeDfa<InputSymbol, OutputSymbol> {
     ///
     pub fn start<'a>(&'a self) -> MatchAction<'a, OutputSymbol, SymbolRangeState<'a, InputSymbol, OutputSymbol>> {
         // TODO: if state 0 is accepting, then this will erroneously not move straight to the accepting state
-        More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
+        if let Some(ref outputsymbol) = self.accept[0] {
+            More(SymbolRangeState { state: 0, count: 0, accept: Some((0, outputsymbol)), state_machine: self })
+        } else {
+            More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
+        }
     }
 }
 

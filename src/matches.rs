@@ -203,10 +203,8 @@ mod test {
         assert!(matches("abcabcabcabc", "abc".repeat(2..4)) == Some(3*3));
     }
 
-    /* -- BROKEN
     #[test]
     fn match_zero_repeats() {
         assert!(matches("", "abc".repeat_forever(0)).is_some());
     }
-    */
 }
