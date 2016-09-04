@@ -272,7 +272,7 @@ mod test {
     }
 
     #[test]
-    fn will_skip_bad_symbols() {
+    fn can_skip_bad_symbols() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
         enum TestToken {
             Digit,
