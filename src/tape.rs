@@ -48,7 +48,10 @@ pub struct Tape<Symbol: Sized, SourceReader: SymbolReader<Symbol>+Sized> {
     first_symbol_index: usize,
 
     /// True if the target reader has returned None
-    end_of_reader: bool
+    end_of_reader: bool,
+
+    /// Number of symbols that have been read from the source
+    source_position: usize
 }
 
 impl<Symbol: Clone+Sized, SourceReader: SymbolReader<Symbol>> Tape<Symbol, SourceReader> {
@@ -56,7 +59,15 @@ impl<Symbol: Clone+Sized, SourceReader: SymbolReader<Symbol>> Tape<Symbol, Sourc
     /// Creates a new tape from a symbol reader
     ///
     pub fn new(source: SourceReader) -> Tape<Symbol, SourceReader> {
-        Tape { read_from: source, buffer: vec![None, None, None, None], read_index: 0, last_symbol_index: 0, first_symbol_index: 0, end_of_reader: false }
+        Tape { 
+            read_from:          source, 
+            buffer:             vec![None, None, None, None],
+            read_index:         0,
+            last_symbol_index:  0,
+            first_symbol_index: 0, 
+            end_of_reader:      false, 
+            source_position:    0 
+        }
     }
 
     ///
@@ -122,10 +133,19 @@ impl<Symbol: Clone+Sized, SourceReader: SymbolReader<Symbol>> Tape<Symbol, Sourc
         }
 
         // Move backwards num_symbols
+        self.source_position -= num_symbols;
+
         let mut new_read_index = (self.read_index+self.buffer.len()) - num_symbols;
         if new_read_index >= self.buffer.len() { new_read_index -= self.buffer.len(); }
 
         self.read_index = new_read_index;
+    }
+
+    ///
+    /// Retrieves the current position in the source stream (number of symbols read since the start)
+    ///
+    pub fn get_source_position(&self) -> usize {
+        self.source_position
     }
 }
 
@@ -165,6 +185,7 @@ impl<Symbol: Clone+Sized, Reader: SymbolReader<Symbol>+Sized> SymbolReader<Symbo
         let result = self.buffer[self.read_index].clone();
 
         self.read_index += 1;
+        self.source_position += 1;
         if self.read_index >= self.buffer.len() { self.read_index = 0; }
 
         result
@@ -181,6 +202,7 @@ mod test {
         let source_stream = source_vec.read_symbols();
         let mut tape      = Tape::new(source_stream);
 
+        assert!(tape.get_source_position() == 0);
         assert!(tape.next_symbol() == Some(1));
         assert!(tape.next_symbol() == Some(2));
         assert!(tape.next_symbol() == Some(3));
@@ -188,6 +210,7 @@ mod test {
         assert!(tape.next_symbol() == Some(5));
         assert!(tape.next_symbol() == Some(6));
         assert!(tape.next_symbol() == None);
+        assert!(tape.get_source_position() == 6);
     }
 
     #[test]
@@ -199,8 +222,9 @@ mod test {
         assert!(tape.next_symbol() == Some(1));
         assert!(tape.next_symbol() == Some(2));
         assert!(tape.next_symbol() == Some(3));
-        tape.rewind(3);
 
+        tape.rewind(3);
+        assert!(tape.get_source_position() == 0);
         assert!(tape.next_symbol() == Some(1));
         assert!(tape.next_symbol() == Some(2));
         assert!(tape.next_symbol() == Some(3));
@@ -210,6 +234,7 @@ mod test {
         assert!(tape.next_symbol() == None);
 
         tape.rewind(4);
+        assert!(tape.get_source_position() == 2);
         assert!(tape.next_symbol() == Some(3));
         assert!(tape.next_symbol() == Some(4));
         assert!(tape.next_symbol() == Some(5));
