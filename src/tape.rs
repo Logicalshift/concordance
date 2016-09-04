@@ -147,6 +147,10 @@ impl<Symbol: Clone+Sized, SourceReader: SymbolReader<Symbol>> Tape<Symbol, Sourc
     pub fn get_source_position(&self) -> usize {
         self.source_position
     }
+
+    pub fn at_end_of_reader(&self) -> bool {
+        self.end_of_reader && self.read_index == self.last_symbol_index
+    }
 }
 
 impl<Symbol: Clone+Sized, Reader: SymbolReader<Symbol>+Sized> SymbolReader<Symbol> for Tape<Symbol, Reader> {

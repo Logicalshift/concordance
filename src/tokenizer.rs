@@ -15,7 +15,7 @@
 //
 
 //!
-//! A TokenMatcher is a pattern matcher that is intended to turn a stream of symbols into another stream of symbols based on the patterns
+//! A tokenizer is a pattern matcher that is intended to turn a stream of symbols into another stream of symbols based on the patterns
 //! that are matched. Every pattern can produce a different output symbol. If two input strings can ndfa in two different output
 //! symbols, then the output symbol that is ordered lower is the one that's produced (ie, if the output symbols are numbers, then '0' will
 //! be produced instead of '1' in the event of a clash)
@@ -28,6 +28,10 @@ use super::state_machine::*;
 use super::ndfa::*;
 use super::prepare::*;
 use super::symbol_range_dfa::*;
+use super::symbol_reader::*;
+use super::pattern_matcher::*;
+use super::matches::*;
+use super::tape::*;
 
 ///
 /// Used for generating tokenizing pattern matchers
@@ -79,6 +83,101 @@ for &'a TokenMatcher<InputSymbol, OutputSymbol> {
         let ndfa = self.to_ndfa();
 
         ndfa.prepare_to_match()
+    }
+}
+
+///
+/// A tokenizer is a type of symbol stream that uses a pattern matcher to convert a symbol stream into a stream of tokens
+///
+pub struct Tokenizer<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> {
+    /// The pattern matcher for this tokenizer
+    dfa: SymbolRangeDfa<InputSymbol, OutputSymbol>,
+
+    /// Tape of input symbols that will be used to generate the result
+    tape: Tape<InputSymbol, Reader>,
+}
+
+impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> Tokenizer<InputSymbol, OutputSymbol, Reader> {
+    ///
+    /// Creates a new tokenizer from a pattern (usually a TokenMatcher)
+    ///
+    pub fn new<Prepare: PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>>>(source: Reader, pattern: Prepare) -> Tokenizer<InputSymbol, OutputSymbol, Reader> {
+        Tokenizer { dfa: pattern.prepare_to_match(), tape: Tape::new(source) }
+    }
+
+    ///
+    /// Creates a new tokenizer from a prepared pattern
+    ///
+    pub fn new_prepared(source: Reader, pattern: SymbolRangeDfa<InputSymbol, OutputSymbol>) -> Tokenizer<InputSymbol, OutputSymbol, Reader> {
+        Tokenizer { dfa: pattern, tape: Tape::new(source) }
+    }
+
+    ///
+    /// Returns the current position in the source (the position after the last matched symbol)
+    ///
+    pub fn get_source_position(&self) -> usize {
+        self.tape.get_source_position()
+    }
+
+    ///
+    /// Skips an input symbol (returning the symbol that was skipped)
+    ///
+    pub fn skip_input(&mut self) -> Option<InputSymbol> {
+        self.tape.next_symbol()
+    }
+
+    ///
+    /// True if we've reached the end of the source reader
+    ///
+    /// If `next_symbol` returns `None` and `at_end_of_reader` is false, then the input stream does not contain a symbol matching the DFA
+    ///
+    pub fn at_end_of_reader(&self) -> bool {
+        self.tape.at_end_of_reader()
+    }
+}
+
+impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for Tokenizer<InputSymbol, OutputSymbol, Reader> {
+    fn next_symbol(&mut self) -> Option<OutputSymbol> {
+        // Start of the next symbol
+        let start_pos = self.tape.get_source_position();
+
+        // Match against it
+        let match_result = match_pattern(self.dfa.start(), &mut self.tape);
+
+        let end_pos = self.tape.get_source_position();
+        match match_result {
+            Accept(length, outputsymbol) => {
+                if length > 0 {
+                    // Rewind the tape to after the accepted symbol
+                    self.tape.rewind(end_pos-start_pos - length);
+
+                    // Won't try to match anything before this position
+                    self.tape.cut();
+
+                    // Result is the oputput symbol
+                    Some(outputsymbol.clone())
+                } else {
+                    // Zero-length match
+                    // If we accepted matches of length 0 we'd get an infinite stream when we hit a symbol that doesn't match
+                    self.tape.rewind(end_pos-start_pos);
+                    self.tape.next_symbol();
+
+                    None
+                }
+            },
+
+            Reject => {
+                // Rewind back to the start position
+                self.tape.rewind(end_pos-start_pos);
+
+                // No match
+                None
+            },
+
+            _ => {
+                panic!("Unexpected output state of ");
+            }
+        }
     }
 }
 
@@ -139,5 +238,36 @@ mod test {
         assert!(match_pattern(matcher.start(), &mut "aaab".read_symbols()).is_accepted(&TestToken::Aaab));
         assert!(match_pattern(matcher.start(), &mut "ab".read_symbols()).is_accepted(&TestToken::Abbb));
         assert!(match_pattern(matcher.start(), &mut "abbbb".read_symbols()).is_accepted(&TestToken::Abbb));
+    }
+
+    #[test]
+    fn can_match_number_stream() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(1), TestToken::Whitespace);
+
+        let mut tokenizer = Tokenizer::new("12 390  32 ".read_symbols(), &token_matcher);
+
+        assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
+        assert!(tokenizer.get_source_position() == 2);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
+        assert!(tokenizer.get_source_position() == 3);
+        assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
+        assert!(tokenizer.get_source_position() == 6);
+        assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
+        assert!(tokenizer.get_source_position() == 8);
+        assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
+        assert!(tokenizer.get_source_position() == 10);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
+        assert!(tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_symbol() == None);
     }
 }
