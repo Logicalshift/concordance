@@ -222,6 +222,24 @@ mod test {
     }
 
     #[test]
+    fn can_distinguish_simple_tokens_with_zero_repeats() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            AllAs,
+            AllBs
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern("a".repeat_forever(0), TestToken::AllAs);
+        token_matcher.add_pattern("b".repeat_forever(0), TestToken::AllBs);
+
+        let matcher = token_matcher.prepare_to_match();
+
+        assert!(match_pattern(matcher.start(), &mut "aaaaa".read_symbols()).is_accepted(&TestToken::AllAs));
+        assert!(match_pattern(matcher.start(), &mut "bbbb".read_symbols()).is_accepted(&TestToken::AllBs));
+    }
+
+    #[test]
     fn clashes_producer_lower_tokens() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
         enum TestToken {
