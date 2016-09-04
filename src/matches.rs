@@ -196,6 +196,24 @@ mod test {
     }
 
     #[test]
+    fn match_with_zero_or_more_alternatives() {
+        assert!(matches("", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(0));
+        assert!(matches("abc", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
+        assert!(matches("def", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
+        assert!(matches("abcabc", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
+        assert!(matches("defdef", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
+    }
+
+    #[test]
+    fn match_with_one_or_more_alternatives() {
+        assert!(matches("", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == None);
+        assert!(matches("abc", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
+        assert!(matches("def", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
+        assert!(matches("abcabc", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
+        assert!(matches("defdef", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
+    }
+
+    #[test]
     fn match_limited_range() {
         assert!(matches("abc", "abc".repeat(2..4)).is_none());
         assert!(matches("abcabc", "abc".repeat(2..4)).is_some());
