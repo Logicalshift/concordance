@@ -15,7 +15,7 @@
 //
 
 //!
-//! A tokenizer is a pattern matcher that is intended to turn a stream of symbols into another stream of symbols based on the patterns
+//! A TokenMatcher is a pattern matcher that is intended to turn a stream of symbols into another stream of symbols based on the patterns
 //! that are matched. Every pattern can produce a different output symbol. If two input strings can ndfa in two different output
 //! symbols, then the output symbol that is ordered lower is the one that's produced (ie, if the output symbols are numbers, then '0' will
 //! be produced instead of '1' in the event of a clash)
@@ -32,16 +32,16 @@ use super::symbol_range_dfa::*;
 ///
 /// Used for generating tokenizing pattern matchers
 ///
-pub struct Tokenizer<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord> {
+pub struct TokenMatcher<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord> {
     patterns: Vec<(Pattern<InputSymbol>, OutputSymbol)>
 }
 
-impl<InputSymbol: Clone+Ord+Countable+'static, OutputSymbol: Clone+Ord+'static> Tokenizer<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Clone+Ord+Countable+'static, OutputSymbol: Clone+Ord+'static> TokenMatcher<InputSymbol, OutputSymbol> {
     ///
-    /// Creates a new tokenizer
+    /// Creates a new TokenMatcher
     ///
-    pub fn new() -> Tokenizer<InputSymbol, OutputSymbol> {
-        Tokenizer { patterns: vec![] }
+    pub fn new() -> TokenMatcher<InputSymbol, OutputSymbol> {
+        TokenMatcher { patterns: vec![] }
     }
 
     ///
@@ -52,7 +52,7 @@ impl<InputSymbol: Clone+Ord+Countable+'static, OutputSymbol: Clone+Ord+'static> 
     }
 
     ///
-    /// Compiles an NDFA from this tokenizer
+    /// Compiles an NDFA from this TokenMatcher
     ///
     pub fn to_ndfa(&self) -> Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>> {
         let mut ndfa = Ndfa::new();
@@ -73,7 +73,7 @@ impl<InputSymbol: Clone+Ord+Countable+'static, OutputSymbol: Clone+Ord+'static> 
 }
 
 impl<'a, InputSymbol: Clone+Ord+Countable+'static, OutputSymbol: Clone+Ord+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
-for &'a Tokenizer<InputSymbol, OutputSymbol> {
+for &'a TokenMatcher<InputSymbol, OutputSymbol> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, OutputSymbol> {
         let ndfa = self.to_ndfa();
@@ -87,21 +87,21 @@ mod test {
     use super::super::*;
 
     #[test]
-    fn can_match_tokenizer_like_any_other_pattern() {
+    fn can_match_TokenMatcher_like_any_other_pattern() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
         enum TestToken {
             AllAs,
             AllBs
         }
 
-        let mut tokenizer = Tokenizer::new();
-        tokenizer.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        tokenizer.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        let mut TokenMatcher = TokenMatcher::new();
+        TokenMatcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
+        TokenMatcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
 
-        assert!(matches("aaaa", &tokenizer) == Some(4));
-        assert!(matches("bbbbb", &tokenizer) == Some(5));
-        assert!(matches("abbb", &tokenizer) == Some(1));
-        assert!(matches("bbaaa", &tokenizer) == Some(2));
+        assert!(matches("aaaa", &TokenMatcher) == Some(4));
+        assert!(matches("bbbbb", &TokenMatcher) == Some(5));
+        assert!(matches("abbb", &TokenMatcher) == Some(1));
+        assert!(matches("bbaaa", &TokenMatcher) == Some(2));
     }
 
     #[test]
@@ -112,11 +112,11 @@ mod test {
             AllBs
         }
 
-        let mut tokenizer = Tokenizer::new();
-        tokenizer.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        tokenizer.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        let mut TokenMatcher = TokenMatcher::new();
+        TokenMatcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
+        TokenMatcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
 
-        let matcher = tokenizer.prepare_to_match();
+        let matcher = TokenMatcher.prepare_to_match();
 
         assert!(match_pattern(matcher.start(), &mut "aaaaa".read_symbols()).is_accepted(&TestToken::AllAs));
         assert!(match_pattern(matcher.start(), &mut "bbbb".read_symbols()).is_accepted(&TestToken::AllBs));
@@ -130,11 +130,11 @@ mod test {
             Aaab
         }
 
-        let mut tokenizer = Tokenizer::new();
-        tokenizer.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
-        tokenizer.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
+        let mut TokenMatcher = TokenMatcher::new();
+        TokenMatcher.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
+        TokenMatcher.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
 
-        let matcher = tokenizer.prepare_to_match();
+        let matcher = TokenMatcher.prepare_to_match();
 
         assert!(match_pattern(matcher.start(), &mut "aaab".read_symbols()).is_accepted(&TestToken::Aaab));
         assert!(match_pattern(matcher.start(), &mut "ab".read_symbols()).is_accepted(&TestToken::Abbb));
