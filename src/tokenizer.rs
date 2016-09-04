@@ -160,9 +160,8 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: 
                     // Zero-length match
                     // If we accepted matches of length 0 we'd get an infinite stream when we hit a symbol that doesn't match
                     self.tape.rewind(end_pos-start_pos);
-                    self.tape.next_symbol();
-                    self.tape.cut();
 
+                    // Return no match
                     None
                 }
             },
@@ -290,7 +289,9 @@ mod test {
         assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
         assert!(tokenizer.next_symbol() == None);
         assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.skip_input() == Some('a'));
         assert!(tokenizer.next_symbol() == None);
+        assert!(tokenizer.skip_input() == Some('b'));
         assert!(!tokenizer.at_end_of_reader());
         assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
         assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
@@ -316,8 +317,10 @@ mod test {
         assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
         assert!(tokenizer.next_symbol() == None);
         assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.skip_input() == Some('a'));
         assert!(tokenizer.next_symbol() == None);
         assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.skip_input() == Some('b'));
         assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
         assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
         assert!(tokenizer.next_symbol() == None);
