@@ -297,8 +297,6 @@ mod test {
 
         let state_machine = DfaCompiler::build(ndfa, builder);
 
-        println!("{:?}", state_machine);
-
         // Read back 'ba' manually
         let mut state = state_machine.start();
         let mut input = "ba".read_symbols();
