@@ -25,7 +25,7 @@
 //! # Example
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! # use ndfa::overlapping_symbols::*;
 //! let mut map = SymbolMap::new();
 //!

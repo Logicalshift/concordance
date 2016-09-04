@@ -1,5 +1,5 @@
 [package]
-name    = "ndfa"
-version = "0.1.0"
+name    = "concordance"
+version = "0.2.0"
 license = "Apache"
 authors = ["Andrew Hunter <andrew@logicalshift.co.uk>"]

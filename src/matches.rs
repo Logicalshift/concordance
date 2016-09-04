@@ -20,7 +20,7 @@
 //! stream that matches the pattern. Use it like this:
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! # assert!(matches("abcabc", "abc".repeat_forever(1)) == Some(6));
 //! # assert!(matches("abcabcabc", "abc".repeat_forever(1)).is_some());
 //! # assert!(matches("abc", "abc").is_some());
@@ -31,7 +31,7 @@
 //! To determine if a string exactly matches a pattern, compare to the string length like this:
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let input_string = "abcabc";
 //! let pattern      = "abc".repeat_forever(1);
 //!
@@ -55,7 +55,7 @@ use super::prepare::*;
 /// or for working with pattern matchers other than the default one.
 ///
 /// ```
-/// # use ndfa::*;
+/// # use concordance::*;
 /// let input_string = "abcabc";
 /// let pattern      = "abc".repeat_forever(1);
 /// let matcher      = pattern.prepare_to_match();
@@ -104,7 +104,7 @@ fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRan
 /// so this will return the length of the longest string that can match the given pattern.
 ///
 /// ```
-/// # use ndfa::*;
+/// # use concordance::*;
 /// matches("abc", "abc");                      // Returns Some(3)
 /// matches("abcabc", "abc");                   // Also returns Some(3) as 'abc' matches the pattern
 /// matches("abcabc", "abc".repeat_forever(0)); // Returns Some(6)
@@ -114,7 +114,7 @@ fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRan
 /// It's worth noting that this is not just limited to strings and characters. For example, vectors will work too:
 ///
 /// ```
-/// # use ndfa::*;
+/// # use concordance::*;
 /// matches(&vec![1,2,3,1,2,3], vec![1,2,3].repeat_forever(1)); // == Some(6)
 /// # assert!(matches(&vec![1,2,3,1,2,3], vec![1,2,3].repeat_forever(1)) == Some(6));
 /// ```
@@ -138,7 +138,7 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 /// will increase the performance of the matcher for every match after the first one. This call is otherwise identical to `matches`.
 ///
 /// ```
-/// # use ndfa::*;
+/// # use concordance::*;
 /// let prepared = "abc".repeat_forever(1).prepare_to_match();
 ///
 /// matches_prepared("abcabc", &prepared);      // == Some(6)

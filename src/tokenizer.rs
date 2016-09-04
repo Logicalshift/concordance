@@ -87,21 +87,21 @@ mod test {
     use super::super::*;
 
     #[test]
-    fn can_match_TokenMatcher_like_any_other_pattern() {
+    fn can_match_tokens_like_any_other_pattern() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
         enum TestToken {
             AllAs,
             AllBs
         }
 
-        let mut TokenMatcher = TokenMatcher::new();
-        TokenMatcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        TokenMatcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
+        token_matcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
 
-        assert!(matches("aaaa", &TokenMatcher) == Some(4));
-        assert!(matches("bbbbb", &TokenMatcher) == Some(5));
-        assert!(matches("abbb", &TokenMatcher) == Some(1));
-        assert!(matches("bbaaa", &TokenMatcher) == Some(2));
+        assert!(matches("aaaa", &token_matcher) == Some(4));
+        assert!(matches("bbbbb", &token_matcher) == Some(5));
+        assert!(matches("abbb", &token_matcher) == Some(1));
+        assert!(matches("bbaaa", &token_matcher) == Some(2));
     }
 
     #[test]
@@ -112,11 +112,11 @@ mod test {
             AllBs
         }
 
-        let mut TokenMatcher = TokenMatcher::new();
-        TokenMatcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        TokenMatcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
+        token_matcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
 
-        let matcher = TokenMatcher.prepare_to_match();
+        let matcher = token_matcher.prepare_to_match();
 
         assert!(match_pattern(matcher.start(), &mut "aaaaa".read_symbols()).is_accepted(&TestToken::AllAs));
         assert!(match_pattern(matcher.start(), &mut "bbbb".read_symbols()).is_accepted(&TestToken::AllBs));
@@ -130,11 +130,11 @@ mod test {
             Aaab
         }
 
-        let mut TokenMatcher = TokenMatcher::new();
-        TokenMatcher.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
-        TokenMatcher.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
+        token_matcher.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
 
-        let matcher = TokenMatcher.prepare_to_match();
+        let matcher = token_matcher.prepare_to_match();
 
         assert!(match_pattern(matcher.start(), &mut "aaab".read_symbols()).is_accepted(&TestToken::Aaab));
         assert!(match_pattern(matcher.start(), &mut "ab".read_symbols()).is_accepted(&TestToken::Abbb));

@@ -30,7 +30,7 @@
 //! DFAs for other purposes or for creating new types of state machine that aren't already in this library.
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let ndfa     = "abc".into_pattern().to_ndfa("Success");
 //! let builder  = SymbolRangeDfaBuilder::new();
 //!

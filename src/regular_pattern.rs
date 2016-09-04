@@ -23,7 +23,7 @@
 //! to represent a symbol:
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let match_abc = "abc".into_pattern();
 //! let match_123 = [1,2,3].into_pattern();
 //! ```
@@ -32,7 +32,7 @@
 //! patterns, there are a series of functions that will create patterns with repetitions or other constructs in them:
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let stuff_or_nonsense = "stuff".or("nonsense");
 //! let any_amount_of_stuff = "stuff".repeat_forever(1);
 //! let went_to_market = "piggies".repeat(0..5);
@@ -43,7 +43,7 @@
 //! not require any quoting in order to be used (and are hence much easier to use with dynamic values).
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let some_counting = vec![1, 2, 3].repeat_forever(1);
 //! ```
 //!

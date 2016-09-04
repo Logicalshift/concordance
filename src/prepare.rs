@@ -19,7 +19,7 @@
 //! be used many times without the delay of generating a DFA.
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let match_abcs      = "abc".prepare_to_match();
 //! let match_many_abcs = "abc".repeat_forever(1).prepare_to_match();
 //! 

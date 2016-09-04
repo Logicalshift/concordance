@@ -29,7 +29,7 @@
 //! An NDFA is created by calling the constructor:
 //!
 //! ```
-//! # use ndfa::*;
+//! # use concordance::*;
 //! let mut ndfa: Ndfa<u32, u32> = Ndfa::new();
 //! ```
 //!
