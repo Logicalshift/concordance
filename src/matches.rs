@@ -181,9 +181,9 @@ mod test {
 
     #[test]
     fn match_with_zero_or_more() {
-        assert!(matches("abc", "abc".repeat_forever(0)).is_some());
-        assert!(matches("abcabc", "abc".repeat_forever(0)).is_some());
-        assert!(matches("abcabcabc", "abc".repeat_forever(0)).is_some());
+        assert!(matches("abc", "abc".repeat_forever(0)) == Some(3));
+        assert!(matches("abcabc", "abc".repeat_forever(0)) == Some(6));
+        assert!(matches("abcabcabc", "abc".repeat_forever(0)) == Some(9));
     }
 
     #[test]
