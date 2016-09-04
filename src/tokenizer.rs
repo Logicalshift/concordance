@@ -344,4 +344,32 @@ mod test {
         assert!(tokenizer.next_symbol() == None);
         assert!(tokenizer.at_end_of_reader());
     }
+
+    #[test]
+    fn wont_match_zero_length_2() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat(0..4), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat(0..4), TestToken::Whitespace);
+
+        let mut tokenizer = Tokenizer::new("12 ab 12".read_symbols(), &token_matcher);
+
+        assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
+        assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
+        assert!(tokenizer.next_symbol() == None);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.skip_input() == Some('a'));
+        assert!(tokenizer.next_symbol() == None);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.skip_input() == Some('b'));
+        assert!(tokenizer.next_symbol() == Some(TestToken::Whitespace));
+        assert!(tokenizer.next_symbol() == Some(TestToken::Digit));
+        assert!(tokenizer.next_symbol() == None);
+        assert!(tokenizer.at_end_of_reader());
+    }
 }
