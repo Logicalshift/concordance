@@ -26,7 +26,7 @@
 //!
 //! ```
 //! # use concordance::*;
-//! # use ndfa::overlapping_symbols::*;
+//! # use concordance::overlapping_symbols::*;
 //! let mut map = SymbolMap::new();
 //!
 //! map.add_range(&SymbolRange::new(0, 10));
