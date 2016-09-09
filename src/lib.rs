@@ -31,8 +31,9 @@ pub use self::symbol_range_dfa::*;
 pub use self::dfa_compiler::*;
 pub use self::prepare::*;
 pub use self::matches::*;
-pub use self::tokenizer::*;
 pub use self::tape::*;
+pub use self::tokenizer::*;
+pub use self::annotated_stream::*;
 
 pub mod countable;
 pub mod symbol_range;
@@ -48,5 +49,7 @@ pub mod symbol_range_dfa;
 pub mod dfa_compiler;
 pub mod prepare;
 pub mod matches;
-pub mod tokenizer;
 pub mod tape;
+pub mod tokenizer;
+pub mod annotated_stream;
+
