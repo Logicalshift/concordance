@@ -87,11 +87,35 @@ for &'a TokenMatcher<InputSymbol, OutputSymbol> {
 }
 
 ///
+/// Thing that can be a reference or the actual thing
+///
+/// An elegant way of dealing with the 'sometimes we store a reference, but sometimes we also need the actual thing' problem
+/// that we have here would be for rust to support self-references in structures (or perhaps some other way - via RefCell or Box
+/// perhaps - not possible in any obvious way at present due to borrowing order problems).
+///
+enum ReferenceOrOwned<'a, Thing: 'a> {
+    Reference(&'a Thing),
+    Owned(Thing)
+}
+
+use self::ReferenceOrOwned::*;
+
+impl<'a, Thing> ReferenceOrOwned<'a, Thing> {
+    #[inline]
+    fn get(&'a self) -> &'a Thing {
+        match self {
+            &Reference(ref thing)    => *thing,
+            &Owned(ref thing)        => thing
+        }
+    }
+}
+
+///
 /// A tokenizer is a type of symbol stream that uses a pattern matcher to convert a symbol stream into a stream of tokens
 ///
 pub struct Tokenizer<'a, InputSymbol: Clone+Ord+Countable+'a, OutputSymbol: Clone+Ord+'a, Reader: SymbolReader<InputSymbol>> {
     /// The pattern matcher for this tokenizer
-    dfa: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>,
+    dfa: ReferenceOrOwned<'a, SymbolRangeDfa<InputSymbol, OutputSymbol>>,
 
     /// Tape of input symbols that will be used to generate the result
     tape: Tape<InputSymbol, Reader>,
@@ -102,21 +126,14 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: Symb
     /// Creates a new tokenizer from a pattern (usually a TokenMatcher)
     ///
     pub fn new<'b, Prepare: PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>>>(source: Reader, pattern: Prepare) -> Tokenizer<'b, InputSymbol, OutputSymbol, Reader> {
-        /*
-        let generated_dfa   = RefCell::new(Some(pattern.prepare_to_match())).borrow();
-        let dfa             = generated_dfa;
-        let tape            = Tape::new(source);
-
-        Tokenizer { generated_dfa: generated_dfa, dfa: dfa, tape: tape }
-        */
-        unimplemented!()
+        Tokenizer { dfa: Owned(pattern.prepare_to_match()), tape: Tape::new(source) }
     }
 
     ///
     /// Creates a new tokenizer from a prepared pattern
     ///
     pub fn new_prepared<'b>(source: Reader, pattern: &'b SymbolRangeDfa<InputSymbol, OutputSymbol>) -> Tokenizer<'b, InputSymbol, OutputSymbol, Reader> {
-        Tokenizer { dfa: pattern, tape: Tape::new(source) }
+        Tokenizer { dfa: Reference(pattern), tape: Tape::new(source) }
     }
 
     ///
@@ -149,7 +166,7 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Read
         let start_pos = self.tape.get_source_position();
 
         // Match against it
-        let match_result = match_pattern(self.dfa.start(), &mut self.tape);
+        let match_result = match_pattern(self.dfa.get().start(), &mut self.tape);
 
         let end_pos = self.tape.get_source_position();
         match match_result {
