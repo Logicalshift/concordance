@@ -89,26 +89,33 @@ for &'a TokenMatcher<InputSymbol, OutputSymbol> {
 ///
 /// A tokenizer is a type of symbol stream that uses a pattern matcher to convert a symbol stream into a stream of tokens
 ///
-pub struct Tokenizer<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> {
+pub struct Tokenizer<'a, InputSymbol: Clone+Ord+Countable+'a, OutputSymbol: Clone+Ord+'a, Reader: SymbolReader<InputSymbol>> {
     /// The pattern matcher for this tokenizer
-    dfa: SymbolRangeDfa<InputSymbol, OutputSymbol>,
+    dfa: &'a SymbolRangeDfa<InputSymbol, OutputSymbol>,
 
     /// Tape of input symbols that will be used to generate the result
     tape: Tape<InputSymbol, Reader>,
 }
 
-impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> Tokenizer<InputSymbol, OutputSymbol, Reader> {
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
     ///
     /// Creates a new tokenizer from a pattern (usually a TokenMatcher)
     ///
-    pub fn new<Prepare: PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>>>(source: Reader, pattern: Prepare) -> Tokenizer<InputSymbol, OutputSymbol, Reader> {
-        Tokenizer { dfa: pattern.prepare_to_match(), tape: Tape::new(source) }
+    pub fn new<'b, Prepare: PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>>>(source: Reader, pattern: Prepare) -> Tokenizer<'b, InputSymbol, OutputSymbol, Reader> {
+        /*
+        let generated_dfa   = RefCell::new(Some(pattern.prepare_to_match())).borrow();
+        let dfa             = generated_dfa;
+        let tape            = Tape::new(source);
+
+        Tokenizer { generated_dfa: generated_dfa, dfa: dfa, tape: tape }
+        */
+        unimplemented!()
     }
 
     ///
     /// Creates a new tokenizer from a prepared pattern
     ///
-    pub fn new_prepared(source: Reader, pattern: SymbolRangeDfa<InputSymbol, OutputSymbol>) -> Tokenizer<InputSymbol, OutputSymbol, Reader> {
+    pub fn new_prepared<'b>(source: Reader, pattern: &'b SymbolRangeDfa<InputSymbol, OutputSymbol>) -> Tokenizer<'b, InputSymbol, OutputSymbol, Reader> {
         Tokenizer { dfa: pattern, tape: Tape::new(source) }
     }
 
@@ -136,7 +143,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolRe
     }
 }
 
-impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for Tokenizer<InputSymbol, OutputSymbol, Reader> {
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
     fn next_symbol(&mut self) -> Option<OutputSymbol> {
         // Start of the next symbol
         let start_pos = self.tape.get_source_position();
