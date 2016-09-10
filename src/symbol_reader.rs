@@ -162,12 +162,17 @@ impl<Symbol, Reader: SymbolReader<Symbol>> ReaderToVector<Symbol> for Reader {
 ///
 /// A symbol stream that performs mapping of symbols from a source stream
 ///
-pub struct MappedStream<'a, MapFunction, Reader> {
+pub struct MappedStream<'a, InputSymbol, MapFunction, Reader>
+where Reader: SymbolReader<InputSymbol>+'a {
     /// The source stream
     source_stream: &'a mut Reader,
 
     /// A function used to map a symbol from the source stream to a symbol in the output stream
     mapping_function: MapFunction,
+
+    // Can't see how to eliminate the input symbol reference due to rust's type system
+    #[allow(dead_code)]
+    phantom: PhantomData<InputSymbol>
 }
 
 ///
@@ -175,21 +180,22 @@ pub struct MappedStream<'a, MapFunction, Reader> {
 ///
 pub trait MapSymbolReader<Symbol> : SymbolReader<Symbol>+Sized {
     /// Maps symbols in this stream to symbols in a new stream
-    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, MapFunction, Self>
+    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, MapFunction, Self>
     where MapFunction: FnMut(Symbol) -> OutputSymbol;
 }
 
 impl<Symbol, Reader: SymbolReader<Symbol>> MapSymbolReader<Symbol> for Reader {
-    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, MapFunction, Self> 
+    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, MapFunction, Self> 
     where MapFunction: FnMut(Symbol) -> OutputSymbol {
         MappedStream { 
             source_stream:    self, 
             mapping_function: mapping_function, 
+            phantom:          PhantomData
         }
     }
 }
 
-impl<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> SymbolReader<OutputSymbol> for MappedStream<'a, MapFunction, Reader>
+impl<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> SymbolReader<OutputSymbol> for MappedStream<'a, InputSymbol, MapFunction, Reader>
 where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
     fn next_symbol(&mut self) -> Option<OutputSymbol> {
         if let Some(input_symbol) = self.source_stream.next_symbol() {
