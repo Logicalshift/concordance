@@ -26,7 +26,7 @@ use super::state_machine::*;
 ///
 /// DFA that decides on transitions based on non-overlapping, sorted lists of input symbols
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SymbolRangeDfa<InputSymbol: Ord, OutputSymbol> {
     //
     // Indexes of where each state starts in the transition table (it ends at the start of the next state)
