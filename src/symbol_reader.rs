@@ -22,6 +22,7 @@ use std::slice::Iter;
 use std::io::Read;
 use std::io::Bytes;
 use std::str::Chars;
+use std::marker::PhantomData;
 
 ///
 /// A symbol reader reads one symbol at a time from a source
@@ -137,9 +138,9 @@ impl<'a> SymbolReader<char> for Chars<'a> {
     }
 }
 
-//
-// Can convert symbol streams to vectors
-//
+///
+/// Converts symbol streams to vectors
+///
 pub trait ReaderToVector<Symbol> {
     /// Reads every symbol in this object and returns a vector
     fn to_vec(&mut self) -> Vec<Symbol>;
@@ -155,6 +156,50 @@ impl<Symbol, Reader: SymbolReader<Symbol>> ReaderToVector<Symbol> for Reader {
         }
 
         result
+    }
+}
+
+///
+/// Provides a way to map symbol streams to streams of other types
+///
+pub trait MapSymbolReader<Symbol> : SymbolReader<Symbol>+Sized {
+    /// Maps symbols in this stream to symbols in a new stream
+    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, OutputSymbol, MapFunction, Self>
+    where MapFunction: FnMut(Symbol) -> OutputSymbol;
+}
+
+pub struct MappedStream<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> 
+where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
+    /// The source stream
+    source_stream: &'a mut Reader,
+
+    /// A function used to map a symbol from the source stream to a symbol in the output stream
+    mapping_function: MapFunction,
+
+    /// Shuts the compiler up
+    #[allow(dead_code)]
+    these_are_used_in_the_mapping_function_but_rust_cant_see_that: (PhantomData<InputSymbol>, PhantomData<OutputSymbol>)
+}
+
+impl<Symbol, Reader: SymbolReader<Symbol>> MapSymbolReader<Symbol> for Reader {
+    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, OutputSymbol, MapFunction, Self> 
+    where MapFunction: FnMut(Symbol) -> OutputSymbol {
+        MappedStream { 
+            source_stream: self, 
+            mapping_function: mapping_function, 
+            these_are_used_in_the_mapping_function_but_rust_cant_see_that: (PhantomData, PhantomData)
+        }
+    }
+}
+
+impl<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> SymbolReader<OutputSymbol> for MappedStream<'a, InputSymbol, OutputSymbol, MapFunction, Reader>
+where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
+    fn next_symbol(&mut self) -> Option<OutputSymbol> {
+        if let Some(input_symbol) = self.source_stream.next_symbol() {
+            Some((self.mapping_function)(input_symbol))
+        } else {
+            None
+        }
     }
 }
 
@@ -180,6 +225,15 @@ mod test {
         let result      = reader.to_vec();
 
         assert!(result == vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn can_map_stream() {
+        let source      = vec![1, 2, 3];
+        let mut reader  = source.read_symbols();
+        let result      = reader.map_symbols(|sym| sym+1).to_vec();
+
+        assert!(result == vec![2, 3, 4]);
     }
 
     #[test]
