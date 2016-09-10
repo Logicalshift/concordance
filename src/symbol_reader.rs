@@ -170,7 +170,7 @@ where Reader: SymbolReader<InputSymbol>+'a {
     /// A function used to map a symbol from the source stream to a symbol in the output stream
     mapping_function: MapFunction,
 
-    // Can't see how to eliminate the input symbol reference due to rust's type system. This is used by source_stream, but rust can't see that
+    // Can't see how to eliminate the input symbol reference due to rust's type system. InputSymbol is used by source_stream, but rust can't see that
     #[allow(dead_code)]
     phantom: PhantomData<InputSymbol>
 }
