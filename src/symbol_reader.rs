@@ -137,6 +137,27 @@ impl<'a> SymbolReader<char> for Chars<'a> {
     }
 }
 
+//
+// Can convert symbol streams to vectors
+//
+pub trait ReaderToVector<Symbol> {
+    /// Reads every symbol in this object and returns a vector
+    fn to_vec(&mut self) -> Vec<Symbol>;
+}
+
+impl<Symbol, Reader: SymbolReader<Symbol>> ReaderToVector<Symbol> for Reader {
+    #[inline]
+    fn to_vec(&mut self) -> Vec<Symbol> {
+        let mut result = vec![];
+
+        while let Some(symbol) = self.next_symbol() {
+            result.push(symbol);
+        }
+
+        result
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -150,6 +171,15 @@ mod test {
         assert!(reader.next_symbol() == Some(2));
         assert!(reader.next_symbol() == Some(3));
         assert!(reader.next_symbol() == None);
+    }
+
+    #[test]
+    fn can_convert_to_vec() {
+        let source      = vec![1, 2, 3];
+        let mut reader  = source.read_symbols();
+        let result      = reader.to_vec();
+
+        assert!(result == vec![1, 2, 3]);
     }
 
     #[test]
