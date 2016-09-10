@@ -170,7 +170,7 @@ where Reader: SymbolReader<InputSymbol>+'a {
     /// A function used to map a symbol from the source stream to a symbol in the output stream
     mapping_function: MapFunction,
 
-    // Can't see how to eliminate the input symbol reference due to rust's type system. InputSymbol is used by source_stream, but rust can't see that
+    /// Can't see how to eliminate the input symbol reference due to rust's type system. InputSymbol is used by source_stream, but rust can't see that
     #[allow(dead_code)]
     phantom: PhantomData<InputSymbol>
 }
@@ -197,6 +197,10 @@ impl<Symbol, Reader: SymbolReader<Symbol>> MapSymbolReader<Symbol> for Reader {
 
 impl<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> SymbolReader<OutputSymbol> for MappedStream<'a, InputSymbol, MapFunction, Reader>
 where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
+    // TODO: would like to eliminate InputSymbol as phantom data from the structure
+    // This means removing the constraint on Reader. That doesn't work because rust then thinks InputSymbol is unconstrained here,
+    // even though it's constrained by the function type, the reader type *and* the structure type
+
     fn next_symbol(&mut self) -> Option<OutputSymbol> {
         if let Some(input_symbol) = self.source_stream.next_symbol() {
             Some((self.mapping_function)(input_symbol))
