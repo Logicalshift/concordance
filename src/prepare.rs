@@ -53,20 +53,20 @@ for Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>+'a> {
     }
 }
 
-impl<InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
+impl<InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, ()>> 
 for Pattern<InputSymbol> {
     #[inline]
-    fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, bool> {
-        let ndfa = self.to_ndfa(true);
+    fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, ()> {
+        let ndfa = self.to_ndfa(());
 
         ndfa.prepare_to_match()
     }
 }
 
-impl<'a, InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, bool>> 
+impl<'a, InputSymbol: Clone+Ord+Countable+'static> PrepareToMatch<SymbolRangeDfa<InputSymbol, ()>> 
 for &'a ToPattern<InputSymbol> {
     #[inline]
-    fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, bool> {
+    fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, ()> {
         let pattern = self.to_pattern();
 
         pattern.prepare_to_match()
@@ -80,10 +80,10 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol> PrepareToMatch<SymbolRangeD
     }
 }
 
-impl<'a> PrepareToMatch<SymbolRangeDfa<char, bool>> 
+impl<'a> PrepareToMatch<SymbolRangeDfa<char, ()>> 
 for &'a str {
     #[inline]
-    fn prepare_to_match(self) -> SymbolRangeDfa<char, bool> {
+    fn prepare_to_match(self) -> SymbolRangeDfa<char, ()> {
         let pattern = self.to_pattern();
 
         pattern.prepare_to_match()

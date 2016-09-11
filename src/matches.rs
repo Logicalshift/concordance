@@ -60,8 +60,8 @@ use super::prepare::*;
 /// let pattern      = "abc".repeat_forever(1);
 /// let matcher      = pattern.prepare_to_match();
 ///
-/// let match_result = match_pattern(matcher.start(), &mut input_string.read_symbols()); // == Accept(6, &true)
-/// # assert!(match match_result { Accept(count, val) => count == 6 && val == &true, _ => false });
+/// let match_result = match_pattern(matcher.start(), &mut input_string.read_symbols()); // == Accept(6, &())
+/// # assert!(match match_result { Accept(count, val) => count == 6 && val == &(), _ => false });
 /// ```
 ///
 pub fn match_pattern<'a, InputSymbol: Ord, OutputSymbol, State>(start_state: MatchAction<'a, OutputSymbol, State>, symbol_reader: &mut SymbolReader<InputSymbol>) -> MatchAction<'a, OutputSymbol, State>
