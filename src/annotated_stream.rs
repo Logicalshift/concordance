@@ -15,9 +15,102 @@
 //
 
 //!
-//! A token tree represents the results of applying the tokenizer to an input string. It can output its contents as a series of tokens,
-//! which makes it suitable for repeatedly performing pattern matches. Matching against an already tokenized string produces a tree of
-//! matches.
+//! An annotated stream represents the result of adding lexical symbols to an input stream.
+//!
+//! This is useful when an input stream is turned into a series of tokens, but the original values of those tokens still need to
+//! be retrieved. For example, in a hypothetical programming language we might tokenize the string `a+1` as `<identifier> '+' <number>`.
+//! That's useful for passing into a parser which can recognise it as an expression. However, it's no good for evaluating the
+//! expression as for that it's necessary to know that the first identifier is `a`.
+//!
+//! An annotated stream stores both the input and the output to the tokenizer, which makes it possible to retrieve the input that
+//! was matched to produce each token.
+//!
+//! It can be created by applying a tokenizer to an input stream:
+//!
+//! ```
+//! # use concordance::*;
+//! #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+//! enum LexToken {
+//!     Identifier, Number, Plus
+//! };
+//!
+//! let mut token_matcher = TokenMatcher::new();
+//! token_matcher.add_pattern((MatchRange('a', 'z').or(MatchRange('A', 'Z'))).repeat_forever(1), LexToken::Identifier);
+//! token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), LexToken::Number);
+//! token_matcher.add_pattern("+".into_pattern(), LexToken::Plus);
+//!
+//! let tokenizer = token_matcher.prepare_to_match();
+//!
+//! let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! # assert!(annotated_stream.read_output().to_vec().len() == 3);
+//! ```
+//!
+//! The input and the output can be read independently:
+//!
+//! ```
+//! # use concordance::*;
+//! # #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+//! # enum LexToken {
+//! #     Identifier, Number, Plus
+//! # };
+//! # 
+//! # let mut token_matcher = TokenMatcher::new();
+//! # token_matcher.add_pattern((MatchRange('a', 'z').or(MatchRange('A', 'Z'))).repeat_forever(1), LexToken::Identifier);
+//! # token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), LexToken::Number);
+//! # token_matcher.add_pattern("+".into_pattern(), LexToken::Plus);
+//! # 
+//! # let tokenizer = token_matcher.prepare_to_match();
+//! # 
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! let mut input_stream  = annotated_stream.read_input();  // == ['a' '+' '1']
+//! let mut output_stream = annotated_stream.read_output(); // == [Identifier Plus Number]
+//! # assert!(input_stream.to_vec() == vec!['a', '+', '1']);
+//! ```
+//!
+//! It's possible to work out which token each input symbol corresponds to:
+//!
+//! ```
+//! # use concordance::*;
+//! # #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+//! # enum LexToken {
+//! #     Identifier, Number, Plus
+//! # };
+//! # 
+//! # let mut token_matcher = TokenMatcher::new();
+//! # token_matcher.add_pattern((MatchRange('a', 'z').or(MatchRange('A', 'Z'))).repeat_forever(1), LexToken::Identifier);
+//! # token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), LexToken::Number);
+//! # token_matcher.add_pattern("+".into_pattern(), LexToken::Plus);
+//! # 
+//! # let tokenizer = token_matcher.prepare_to_match();
+//! # 
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! let middle_token = annotated_stream.find_token(1); // == Some(Token { matched: &['+'], output: Plus })
+//! # assert!(middle_token.is_some());
+//! # let unwrapped = middle_token.unwrap();
+//! # assert!(unwrapped.matched == &['+']);
+//! # assert!(unwrapped.output == LexToken::Plus);
+//! ```
+//!
+//! And it's possible to read the fully tokenized form of the stream, or part of the stream:
+//!
+//! ```
+//! # use concordance::*;
+//! # #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+//! # enum LexToken {
+//! #     Identifier, Number, Plus
+//! # };
+//! # 
+//! # let mut token_matcher = TokenMatcher::new();
+//! # token_matcher.add_pattern((MatchRange('a', 'z').or(MatchRange('A', 'Z'))).repeat_forever(1), LexToken::Identifier);
+//! # token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), LexToken::Number);
+//! # token_matcher.add_pattern("+".into_pattern(), LexToken::Plus);
+//! # 
+//! # let tokenizer = token_matcher.prepare_to_match();
+//! # 
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! let tokens      = annotated_stream.read_tokens();              // == stream containing Token objects representing 'Identifier Plus Number'
+//! let more_tokens = annotated_stream.read_tokens_in_range(1..3); // == stream containing Token objects representing just 'Plus Number'
+//! ```
 //!
 
 use std::ops::Range;
@@ -70,6 +163,9 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
                 } else if !tokenizer.at_end_of_reader() {
                     // Skip tokens that don't form a match (returned none + not at the end of the reader)
                     // Try again in case there are further tokens
+
+                    // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
+                    //  Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
                     pos += 1;
                     tokenizer.skip_input();
                 } else {
