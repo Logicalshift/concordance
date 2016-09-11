@@ -117,24 +117,26 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     }
 
     ///
-    /// Finds the index into the tokenized list of the token corresponding to the specified position (None if there is none)
+    /// Finds the index into the tokenized list of the token corresponding to the specified position
     ///
-    fn find_token_index(&self, position: usize) -> Option<usize> {
+    /// Returns Err(index_after) if there's no range corresponding to the position in this stream
+    ///
+    fn find_token_index(&self, position: usize) -> Result<usize, usize> {
         // Try to find the specified position: assumes the tokens are in order (which they are if we generated this stream from left to right)
         let found = self.tokenized.binary_search_by(|&(_, ref location)| location.start.cmp(&position));
         
         // We're only searching on the start position: if we don't find it exactly, then the token might be in the preceding index
         match found {
-            Ok(index) => Some(index),
+            Ok(index) => Ok(index),
 
             Err(index) => {
                 if index == 0 {
-                    None
+                    Err(0)
                 } else {
                     if self.tokenized[index-1].1.end > position {
-                        Some(index-1)
+                        Ok(index-1)
                     } else {
-                        None
+                        Err(index)
                     }
                 }
             }
@@ -145,7 +147,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     /// Finds the token at the specified position in this stream
     ///
     pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<'a, InputSymbol, OutputSymbol>> {
-        let found_index = self.find_token_index(position);
+        let found_index = self.find_token_index(position).ok();
 
         // Build a token for this location
         found_index.map(move |index| {
