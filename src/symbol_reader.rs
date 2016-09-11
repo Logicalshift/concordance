@@ -141,7 +141,7 @@ impl<'a> SymbolReader<char> for Chars<'a> {
 //
 // Boxed symbol readers act like normal symbol readers
 //
-impl<Symbol> SymbolReader<Symbol> for Box<SymbolReader<Symbol>> {
+impl<'a, Symbol> SymbolReader<Symbol> for Box<SymbolReader<Symbol>+'a> {
     fn next_symbol(&mut self) -> Option<Symbol> {
         (**self).next_symbol()
     }
