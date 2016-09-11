@@ -138,6 +138,15 @@ impl<'a> SymbolReader<char> for Chars<'a> {
     }
 }
 
+//
+// Boxed symbol readers act like normal symbol readers
+//
+impl<Symbol> SymbolReader<Symbol> for Box<SymbolReader<Symbol>> {
+    fn next_symbol(&mut self) -> Option<Symbol> {
+        (**self).next_symbol()
+    }
+}
+
 ///
 /// Converts symbol streams to vectors
 ///

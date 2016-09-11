@@ -82,6 +82,23 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
         // Annotated stream is ready
         AnnotatedStream { original: original, tokenized: tokens }
     }
+
+    ///
+    /// Reads the original stream for the original input for this stream
+    ///
+    pub fn read_input<'a>(&'a self) -> Box<SymbolReader<InputSymbol> + 'a> {
+        Box::new(self.original.read_symbols())
+    }
+
+    ///
+    /// Reads the tokenized output stream (only for the symbols that were recognised)
+    ///
+    pub fn read_output<'a>(&'a self) -> Box<SymbolReader<OutputSymbol> + 'a> {
+        let full_output  = self.tokenized.read_symbols();
+        let only_symbols = full_output.map_symbols(|(token, _)| token); 
+
+        Box::new(only_symbols)
+    }
 }
 
 #[cfg(test)]
@@ -104,5 +121,11 @@ mod test {
         let input = "12 42 13";
 
         let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+
+        let annotated_input  = annotated.read_input().to_vec();
+        let annotated_output = annotated.read_output().to_vec();
+
+        assert!(annotated_input == vec!['1', '2', ' ', '4', '2', ' ', '1', '3']);
+        assert!(annotated_output == vec![TestToken::Digit, TestToken::Whitespace, TestToken::Digit, TestToken::Whitespace, TestToken::Digit])
     }
 }
