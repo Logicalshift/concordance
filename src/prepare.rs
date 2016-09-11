@@ -42,8 +42,8 @@ pub trait PrepareToMatch<As> where As: Sized {
     fn prepare_to_match(self) -> As;
 }
 
-impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Ord+Clone> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
-for Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>> {
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Ord+Clone> PrepareToMatch<SymbolRangeDfa<InputSymbol, OutputSymbol>> 
+for Box<StateMachine<SymbolRange<InputSymbol>, OutputSymbol>+'a> {
     #[inline]
     fn prepare_to_match(self) -> SymbolRangeDfa<InputSymbol, OutputSymbol> {
         let builder       = SymbolRangeDfaBuilder::new();

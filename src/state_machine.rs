@@ -122,7 +122,7 @@ impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Rc<S
 ///
 /// Any reference to a state machine is also a state machine
 ///
-impl<InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Box<StateMachine<InputSymbol, OutputSymbol>> {
+impl<'a, InputSymbol, OutputSymbol> StateMachine<InputSymbol, OutputSymbol> for Box<StateMachine<InputSymbol, OutputSymbol>+'a> {
     #[inline]
     fn count_states(&self) -> StateId {
         (**self).count_states()
