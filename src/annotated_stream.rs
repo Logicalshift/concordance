@@ -99,6 +99,37 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
 
         Box::new(only_symbols)
     }
+
+    ///
+    /// Reads the annotated stream as a series of tokens
+    ///
+    pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<'a, InputSymbol, OutputSymbol>> + 'a> {
+        let full_output = self.tokenized.read_symbols();
+        let with_tokens = full_output.map_symbols(move |(output, location)| {
+            Token {
+                location: location.clone(),
+                matched:  &self.original[location],
+                output:   output
+            }
+        });
+
+        Box::new(with_tokens)
+    }
+}
+
+///
+/// A token represents an individual item in an annotated stream
+///
+#[derive(Eq, PartialEq, Clone)]
+pub struct Token<'a, InputSymbol: 'a, OutputSymbol> {
+    /// Where this token appears in the output
+    pub location: Range<usize>,
+
+    /// The input symbols that were matched for this token
+    pub matched: &'a [InputSymbol],
+
+    /// The output symbol that was matched for this token
+    pub output: OutputSymbol
 }
 
 #[cfg(test)]
@@ -124,8 +155,14 @@ mod test {
 
         let annotated_input  = annotated.read_input().to_vec();
         let annotated_output = annotated.read_output().to_vec();
+        let annotated_tokens = annotated.read_tokens().to_vec();
 
         assert!(annotated_input == vec!['1', '2', ' ', '4', '2', ' ', '1', '3']);
-        assert!(annotated_output == vec![TestToken::Digit, TestToken::Whitespace, TestToken::Digit, TestToken::Whitespace, TestToken::Digit])
+        assert!(annotated_output == vec![TestToken::Digit, TestToken::Whitespace, TestToken::Digit, TestToken::Whitespace, TestToken::Digit]);
+
+        assert!(annotated_tokens[0].location.start == 0);
+        assert!(annotated_tokens[0].location.end == 2);
+        assert!(annotated_tokens[0].output == TestToken::Digit);
+        assert!(annotated_tokens[0].matched == &['1', '2']);
     }
 }
