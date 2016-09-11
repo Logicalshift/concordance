@@ -115,6 +115,42 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
 
         Box::new(with_tokens)
     }
+
+    ///
+    /// Finds the token at the specified position in this stream
+    ///
+    pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<'a, InputSymbol, OutputSymbol>> {
+        // Try to find the specified position: assumes the tokens are in order (which they are if we generated this stream from left to right)
+        let found = self.tokenized.binary_search_by(|&(_, ref location)| location.start.cmp(&position));
+        
+        // We're only searching on the start position: if we don't find it exactly, then the token might be in the preceding index
+        let found_index = match found {
+            Ok(index) => Some(index),
+
+            Err(index) => {
+                if index == 0 {
+                    None
+                } else {
+                    if self.tokenized[index-1].1.end > position {
+                        Some(index-1)
+                    } else {
+                        None
+                    }
+                }
+            }
+        };
+
+        // Build a token for this location
+        found_index.map(move |index| {
+            let (ref output, ref location) = self.tokenized[index];
+
+            Token { 
+                location: location.clone(),
+                output:   output.clone(),
+                matched:  &self.original[location.clone()]
+            }
+        })
+    }
 }
 
 ///
@@ -164,5 +200,36 @@ mod test {
         assert!(annotated_tokens[0].location.end == 2);
         assert!(annotated_tokens[0].output == TestToken::Digit);
         assert!(annotated_tokens[0].matched == &['1', '2']);
+    }
+
+    #[test]
+    fn can_find_token() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+
+        let fortytwo = annotated.find_token(4).expect("No token");
+        let whitespace = annotated.find_token(5).expect("No token");
+
+        assert!(fortytwo.location.start == 3);
+        assert!(fortytwo.location.end == 5);
+        assert!(fortytwo.output == TestToken::Digit);
+        assert!(fortytwo.matched == &['4', '2']);
+
+        assert!(whitespace.location.start == 5);
+        assert!(whitespace.location.end == 6);
+        assert!(whitespace.output == TestToken::Whitespace);
+        assert!(whitespace.matched == &[' ']);
     }
 }
