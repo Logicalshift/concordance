@@ -141,6 +141,8 @@ impl<'a> SymbolReader<char> for Chars<'a> {
 //
 // Boxed symbol readers act like normal symbol readers
 //
+// Note the lifetime specifier here (boxes are static by default which can cause a super confusing error message)
+//
 impl<'a, Symbol> SymbolReader<Symbol> for Box<SymbolReader<Symbol>+'a> {
     fn next_symbol(&mut self) -> Option<Symbol> {
         (**self).next_symbol()
