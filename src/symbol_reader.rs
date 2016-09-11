@@ -162,10 +162,10 @@ impl<Symbol, Reader: SymbolReader<Symbol>> ReaderToVector<Symbol> for Reader {
 ///
 /// A symbol stream that performs mapping of symbols from a source stream
 ///
-pub struct MappedStream<'a, InputSymbol, MapFunction, Reader>
-where Reader: SymbolReader<InputSymbol>+'a {
+pub struct MappedStream<InputSymbol, MapFunction, Reader>
+where Reader: SymbolReader<InputSymbol> {
     /// The source stream
-    source_stream: &'a mut Reader,
+    source_stream: Reader,
 
     /// A function used to map a symbol from the source stream to a symbol in the output stream
     mapping_function: MapFunction,
@@ -180,12 +180,12 @@ where Reader: SymbolReader<InputSymbol>+'a {
 ///
 pub trait MapSymbolReader<Symbol> : SymbolReader<Symbol>+Sized {
     /// Maps symbols in this stream to symbols in a new stream
-    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, MapFunction, Self>
+    fn map_symbols<OutputSymbol, MapFunction>(self, mapping_function: MapFunction) -> MappedStream<Symbol, MapFunction, Self>
     where MapFunction: FnMut(Symbol) -> OutputSymbol;
 }
 
 impl<Symbol, Reader: SymbolReader<Symbol>> MapSymbolReader<Symbol> for Reader {
-    fn map_symbols<'a, OutputSymbol, MapFunction>(&'a mut self, mapping_function: MapFunction) -> MappedStream<'a, Symbol, MapFunction, Self> 
+    fn map_symbols<OutputSymbol, MapFunction>(self, mapping_function: MapFunction) -> MappedStream<Symbol, MapFunction, Self> 
     where MapFunction: FnMut(Symbol) -> OutputSymbol {
         MappedStream { 
             source_stream:    self, 
@@ -195,7 +195,7 @@ impl<Symbol, Reader: SymbolReader<Symbol>> MapSymbolReader<Symbol> for Reader {
     }
 }
 
-impl<'a, InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>+'a> SymbolReader<OutputSymbol> for MappedStream<'a, InputSymbol, MapFunction, Reader>
+impl<InputSymbol, OutputSymbol, MapFunction, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for MappedStream<InputSymbol, MapFunction, Reader>
 where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
     // TODO: would like to eliminate InputSymbol as phantom data from the structure
     // This means removing the constraint on Reader. That doesn't work because rust then thinks InputSymbol is unconstrained here,
