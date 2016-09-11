@@ -160,6 +160,43 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
             }
         })
     }
+
+    ///
+    /// Returns a symbol reader that reads all the tokens in a particular range of source positions
+    ///
+    pub fn read_tokens_in_range<'a>(&'a self, search_location: Range<usize>) -> Box<SymbolReader<Token<'a, InputSymbol, OutputSymbol>> + 'a> {
+        // Find the initial index
+        let start_index = match self.find_token_index(search_location.start) { Ok(index) => index, Err(index) => index };
+
+        // Find the final index
+        let mut end_index = start_index;
+        loop {
+            // Don't go over the end of the array
+            if end_index >= self.tokenized.len() {
+                break;
+            }
+
+            // Stop if we find a value after the range we're search for
+            let (_, ref token_location) = self.tokenized[end_index];
+            if token_location.start >= search_location.end {
+                break;
+            }
+
+            end_index += 1;
+        }
+
+        // Generate a symbol reader for this range
+        let token_range = &self.tokenized[start_index..end_index];
+        let with_tokens = token_range.iter().map_symbols(move |(output, location)| {
+            Token { 
+                location: location.clone(),
+                output:   output.clone(),
+                matched:  &self.original[location.clone()]
+            }
+        });
+
+        Box::new(with_tokens)
+    }
 }
 
 ///
@@ -240,5 +277,43 @@ mod test {
         assert!(whitespace.location.end == 6);
         assert!(whitespace.output == TestToken::Whitespace);
         assert!(whitespace.matched == &[' ']);
+    }
+
+    use std::iter::FromIterator;
+
+    #[test]
+    fn can_read_token_range() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+
+        let some_output = annotated.read_tokens_in_range(4..7).to_vec();
+        let input_strings = some_output.iter().map(|token| {
+            let res: String = token.matched.iter().cloned().collect();
+            res
+        });
+        let input_strings_vec = Vec::from_iter(input_strings);
+
+        assert!(input_strings_vec == vec!["42", " ", "13"]);
+
+        let different_output = annotated.read_tokens_in_range(0..4).to_vec();
+        let different_strings = different_output.iter().map(|token| {
+            let res: String = token.matched.iter().cloned().collect();
+            res
+        });
+        let different_strings_vec = Vec::from_iter(different_strings);
+
+        assert!(different_strings_vec == vec!["12", " ", "42"]);
     }
 }
