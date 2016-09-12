@@ -75,7 +75,7 @@ mod test {
     #[test]
     pub fn can_iterate_over_base_stream() {
         let tokenizer        = create_simple_tokenizer();
-        let tokenized_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+        let tokenized_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
         let tokenized_tree   = TreeStream::new_with_tokens(tokenized_stream);
 
         assert!(tokenized_tree.read_input().to_vec() == vec!['a', '+', '1']);

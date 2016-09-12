@@ -41,7 +41,7 @@
 //!
 //! let tokenizer = token_matcher.prepare_to_match();
 //!
-//! let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
 //! # assert!(annotated_stream.read_output().to_vec().len() == 3);
 //! ```
 //!
@@ -61,7 +61,7 @@
 //! # 
 //! # let tokenizer = token_matcher.prepare_to_match();
 //! # 
-//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
 //! let mut input_stream  = annotated_stream.read_input();  // == ['a' '+' '1']
 //! let mut output_stream = annotated_stream.read_output(); // == [Identifier Plus Number]
 //! # assert!(input_stream.to_vec() == vec!['a', '+', '1']);
@@ -83,7 +83,7 @@
 //! # 
 //! # let tokenizer = token_matcher.prepare_to_match();
 //! # 
-//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
 //! let middle_token = annotated_stream.find_token(1); // == Some(Token { matched: &['+'], output: Plus })
 //! # assert!(middle_token.is_some());
 //! # let unwrapped = middle_token.unwrap();
@@ -107,7 +107,7 @@
 //! # 
 //! # let tokenizer = token_matcher.prepare_to_match();
 //! # 
-//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+//! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
 //! let tokens      = annotated_stream.read_tokens();              // == stream containing Token objects representing 'Identifier Plus Number'
 //! let more_tokens = annotated_stream.read_tokens_in_range(1..3); // == stream containing Token objects representing just 'Plus Number'
 //! ```
@@ -137,9 +137,10 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Given a stream and a DFA, tokenizes the stream and annotates it with the appropriate tokens
     ///
-    pub fn from_tokenizer<Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, reader: &mut Reader) -> AnnotatedStream<InputSymbol, OutputSymbol> {
+    pub fn from_tokenizer<Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, reader: Reader) -> AnnotatedStream<InputSymbol, OutputSymbol> {
         // Capture the contents of the original reader (we store them in the result)
-        let     original = reader.to_vec();
+        let mut reader_m = reader;
+        let     original = reader_m.to_vec();
         let mut tokens   = vec![];
 
         {
@@ -330,7 +331,7 @@ mod test {
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
 
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         let annotated_input  = annotated.read_input().to_vec();
         let annotated_output = annotated.read_output().to_vec();
@@ -360,7 +361,7 @@ mod test {
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
 
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         let fortytwo = annotated.find_token(4).expect("No token");
         let whitespace = annotated.find_token(5).expect("No token");
@@ -393,7 +394,7 @@ mod test {
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
 
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, &mut input.read_symbols());
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         let some_output = annotated.read_tokens_in_range(4..7).to_vec();
         let input_strings = some_output.iter().map(|token| {
