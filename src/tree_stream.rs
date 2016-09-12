@@ -20,6 +20,7 @@
 //!
 
 use super::countable::*;
+use super::symbol_reader::*;
 use super::annotated_stream::*;
 
 ///
@@ -40,5 +41,43 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+'static> TreeStream<
     ///
     pub fn new_with_tokens(tokens: AnnotatedStream<InputSymbol, TokenType>) -> Self {
         TreeStream { tokens: tokens, annotations: vec![] }
+    }
+
+    ///
+    /// Reads the input that made up this tree stream
+    ///
+    pub fn read_input<'a>(&'a self) -> Box<SymbolReader<InputSymbol>+'a> {
+        self.tokens.read_input()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::*;
+
+    #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+    enum TestToken {
+        Digit,
+        Identifier,
+        Whitespace
+    }
+
+    fn create_simple_tokenizer() -> SymbolRangeDfa<char, TestToken> {
+        let mut token_matcher = TokenMatcher::new();
+
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
+        token_matcher.add_pattern(MatchRange('a', 'z').repeat_forever(1), TestToken::Identifier);
+        token_matcher.add_pattern(" ".repeat_forever(1), TestToken::Whitespace);
+
+        token_matcher.prepare_to_match()
+    }
+
+    #[test]
+    pub fn can_iterate_over_base_stream() {
+        let tokenizer        = create_simple_tokenizer();
+        let tokenized_stream = AnnotatedStream::from_tokenizer(&tokenizer, &mut "a+1".read_symbols());
+        let tokenized_tree   = TreeStream::new_with_tokens(tokenized_stream);
+
+        assert!(tokenized_tree.read_input().to_vec() == vec!['a', '+', '1']);
     }
 }
