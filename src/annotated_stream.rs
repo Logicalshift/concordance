@@ -124,6 +124,7 @@ use super::symbol_range_dfa::*;
 /// An annotated stream represents an original stream, with ranges tagged with tokens. This can be used to map between a
 /// tokenized stream and the original characters.
 ///
+#[derive(Clone)]
 pub struct AnnotatedStream<InputType, TokenType> {
     /// The original stream that was tokenized
     original: Vec<InputType>,
