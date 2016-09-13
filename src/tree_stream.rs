@@ -49,6 +49,50 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+'static> TreeStream<
     pub fn read_input<'a>(&'a self) -> Box<SymbolReader<InputSymbol>+'a> {
         self.tokens.read_input()
     }
+
+    ///
+    /// Works out the depth of this tree
+    ///
+    pub fn depth(&self) -> usize {
+        self.annotations.len()+1
+    }
+
+    ///
+    /// Reads a the tokens on a particular level of the tree as a stream
+    ///
+    /// `0` is the top-most level of the tree, and `depth()-1` represent the bottom-most level (the level containing the tokens)
+    ///
+    pub fn read_level_tokens<'a>(&'a self, depth: usize) -> Box<SymbolReader<Token<'a, TokenType, TokenType>>+'a> {
+        unimplemented!();
+    }
+
+    ///
+    /// Reads a particular level of the tree as a stream
+    ///
+    /// `0` is the top-most level of the tree, and `depth()-1` represent the bottom-most level (the level containing the tokens)
+    ///
+    pub fn read_level<'a>(&'a self, depth: usize) -> Box<SymbolReader<TokenType>+'a> {
+        if depth == self.annotations.len() {
+            // Just the tokens; this level is flat
+            self.tokens.read_output()
+        } else {
+            // Need to read 'through' the tree to deal with gaps to create the whole stream at this level
+            unimplemented!()
+        }
+    }
+}
+
+///
+/// Symbol reader that reads a 'level' of a tree
+///
+/// If the level has gaps in it, then those are filled in using the tokens from the level above
+///
+struct LevelReader<'a, InputSymbol: 'a, TokenType: 'static> {
+    // The source treestream that is being read
+    source: &'a TreeStream<InputSymbol, TokenType>,
+
+    // The stack of levels being processed
+    stack: Vec<(Box<SymbolReader<Token<'a, TokenType, TokenType>>+'a>, Option<Token<'a, TokenType, TokenType>>)>
 }
 
 #[cfg(test)]
@@ -78,6 +122,7 @@ mod test {
         let tokenized_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
         let tokenized_tree   = TreeStream::new_with_tokens(tokenized_stream);
 
+        assert!(tokenizer.depth() == 1);
         assert!(tokenized_tree.read_input().to_vec() == vec!['a', '+', '1']);
     }
 }
