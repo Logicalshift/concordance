@@ -87,7 +87,7 @@
 //! let middle_token = annotated_stream.find_token(1); // == Some(Token { matched: &['+'], output: Plus })
 //! # assert!(middle_token.is_some());
 //! # let unwrapped = middle_token.unwrap();
-//! # assert!(unwrapped.matched == &['+']);
+//! # assert!(annotated_stream.input_for_token(&unwrapped) == &['+']);
 //! # assert!(unwrapped.output == LexToken::Plus);
 //! ```
 //!
@@ -189,6 +189,13 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     }
 
     ///
+    /// Retrieves the input symbols for a particular token
+    ///
+    pub fn input_for_token<'a>(&'a self, token: &Token<OutputSymbol>) -> &'a [InputSymbol] {
+        &self.original[token.location.clone()]
+    }
+
+    ///
     /// Reads the tokenized output stream (only for the symbols that were recognised)
     ///
     pub fn read_output<'a>(&'a self) -> Box<SymbolReader<OutputSymbol> + 'a> {
@@ -201,12 +208,11 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Reads the annotated stream as a series of tokens
     ///
-    pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<'a, InputSymbol, OutputSymbol>> + 'a> {
+    pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<OutputSymbol>> + 'a> {
         let full_output = self.tokenized.read_symbols();
         let with_tokens = full_output.map_symbols(move |(output, location)| {
             Token {
                 location: location.clone(),
-                matched:  &self.original[location],
                 output:   output
             }
         });
@@ -244,7 +250,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Finds the token at the specified position in this stream
     ///
-    pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<'a, InputSymbol, OutputSymbol>> {
+    pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<OutputSymbol>> {
         let found_index = self.find_token_index(position).ok();
 
         // Build a token for this location
@@ -254,7 +260,6 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
             Token { 
                 location: location.clone(),
                 output:   output.clone(),
-                matched:  &self.original[location.clone()]
             }
         })
     }
@@ -262,7 +267,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Returns a symbol reader that reads all the tokens in a particular range of source positions
     ///
-    pub fn read_tokens_in_range<'a>(&'a self, search_location: Range<usize>) -> Box<SymbolReader<Token<'a, InputSymbol, OutputSymbol>> + 'a> {
+    pub fn read_tokens_in_range<'a>(&'a self, search_location: Range<usize>) -> Box<SymbolReader<Token<OutputSymbol>> + 'a> {
         // Find the initial index
         let start_index = match self.find_token_index(search_location.start) { Ok(index) => index, Err(index) => index };
 
@@ -289,7 +294,6 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
             Token { 
                 location: location.clone(),
                 output:   output.clone(),
-                matched:  &self.original[location.clone()]
             }
         });
 
@@ -301,12 +305,9 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
 /// A token represents an individual item in an annotated stream
 ///
 #[derive(Eq, PartialEq, Clone)]
-pub struct Token<'a, InputSymbol: 'a, OutputSymbol> {
+pub struct Token<OutputSymbol> {
     /// Where this token appears in the output
     pub location: Range<usize>,
-
-    /// The input symbols that were matched for this token
-    pub matched: &'a [InputSymbol],
 
     /// The output symbol that was matched for this token
     pub output: OutputSymbol
@@ -343,7 +344,6 @@ mod test {
         assert!(annotated_tokens[0].location.start == 0);
         assert!(annotated_tokens[0].location.end == 2);
         assert!(annotated_tokens[0].output == TestToken::Digit);
-        assert!(annotated_tokens[0].matched == &['1', '2']);
     }
 
     #[test]
@@ -369,12 +369,12 @@ mod test {
         assert!(fortytwo.location.start == 3);
         assert!(fortytwo.location.end == 5);
         assert!(fortytwo.output == TestToken::Digit);
-        assert!(fortytwo.matched == &['4', '2']);
+        assert!(annotated.input_for_token(&fortytwo) == &['4', '2']);
 
         assert!(whitespace.location.start == 5);
         assert!(whitespace.location.end == 6);
         assert!(whitespace.output == TestToken::Whitespace);
-        assert!(whitespace.matched == &[' ']);
+        assert!(annotated.input_for_token(&whitespace) == &[' ']);
     }
 
     use std::iter::FromIterator;
@@ -398,7 +398,7 @@ mod test {
 
         let some_output = annotated.read_tokens_in_range(4..7).to_vec();
         let input_strings = some_output.iter().map(|token| {
-            let res: String = token.matched.iter().cloned().collect();
+            let res: String = annotated.input_for_token(&token).iter().cloned().collect();
             res
         });
         let input_strings_vec = Vec::from_iter(input_strings);
@@ -407,7 +407,7 @@ mod test {
 
         let different_output = annotated.read_tokens_in_range(0..4).to_vec();
         let different_strings = different_output.iter().map(|token| {
-            let res: String = token.matched.iter().cloned().collect();
+            let res: String = annotated.input_for_token(&token).iter().cloned().collect();
             res
         });
         let different_strings_vec = Vec::from_iter(different_strings);

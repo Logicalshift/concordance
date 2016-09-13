@@ -62,8 +62,13 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+'static> TreeStream<
     ///
     /// `0` is the top-most level of the tree, and `depth()-1` represent the bottom-most level (the level containing the tokens)
     ///
-    pub fn read_level_tokens<'a>(&'a self, depth: usize) -> Box<SymbolReader<Token<'a, TokenType, TokenType>>+'a> {
-        unimplemented!();
+    pub fn read_level_tokens<'a>(&'a self, depth: usize) -> Box<SymbolReader<Token<TokenType>>+'a> {
+        if depth == self.annotations.len() {
+            // Just the tokens
+            self.tokens.read_tokens()
+        } else {
+            unimplemented!();
+        }
     }
 
     ///
@@ -91,8 +96,8 @@ struct LevelReader<'a, InputSymbol: 'a, TokenType: 'static> {
     // The source treestream that is being read
     source: &'a TreeStream<InputSymbol, TokenType>,
 
-    // The stack of levels being processed
-    stack: Vec<(Box<SymbolReader<Token<'a, TokenType, TokenType>>+'a>, Option<Token<'a, TokenType, TokenType>>)>
+    // The stack of levels being processed: the readers and the last token seen from them
+    stack: Vec<(Box<SymbolReader<Token<TokenType>>+'a>, Option<Token<TokenType>>)>
 }
 
 #[cfg(test)]
@@ -122,7 +127,7 @@ mod test {
         let tokenized_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
         let tokenized_tree   = TreeStream::new_with_tokens(tokenized_stream);
 
-        assert!(tokenizer.depth() == 1);
+        assert!(tokenized_tree.depth() == 1);
         assert!(tokenized_tree.read_input().to_vec() == vec!['a', '+', '1']);
     }
 }
