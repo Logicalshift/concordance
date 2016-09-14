@@ -191,8 +191,24 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Retrieves the input symbols for a particular token
     ///
+    #[inline]
     pub fn input_for_token<'a>(&'a self, token: &Token<OutputSymbol>) -> &'a [InputSymbol] {
-        &self.original[token.location.clone()]
+        &self.input_for_range(token.location.clone())
+    }
+
+    ///
+    /// Retrieves the input symbols for a particular range
+    ///
+    #[inline]
+    pub fn input_for_range<'a>(&'a self, range: Range<usize>) -> &'a [InputSymbol] {
+        &self.original[range]
+    }
+
+    ///
+    /// Retrieves the number of tokens in the input to this stream
+    ///
+    pub fn input_len(&self) -> usize {
+        self.original.len()
     }
 
     ///
@@ -313,8 +329,18 @@ pub struct Token<OutputSymbol> {
     pub output: OutputSymbol
 }
 
+impl<OutputSymbol> Token<OutputSymbol> {
+    ///
+    /// Creates a new token
+    ///
+    pub fn new(location: Range<usize>, output: OutputSymbol) -> Token<OutputSymbol> {
+        Token { location: location, output: output }
+    }
+}
+
 #[cfg(test)]
 mod test {
+    use std::iter::FromIterator;
     pub use super::super::*;
 
     #[test]
@@ -377,8 +403,6 @@ mod test {
         assert!(annotated.input_for_token(&whitespace) == &[' ']);
     }
 
-    use std::iter::FromIterator;
-
     #[test]
     fn can_read_token_range() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
@@ -413,5 +437,45 @@ mod test {
         let different_strings_vec = Vec::from_iter(different_strings);
 
         assert!(different_strings_vec == vec!["12", " ", "42"]);
+    }
+
+    #[test]
+    fn can_get_input_length() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+
+        assert!(annotated.input_len() == 8);
+    }
+
+    #[test]
+    fn can_get_input_range() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+
+        assert!(annotated.input_for_range(3..6) == &['4', '2', ' ']);
     }
 }
