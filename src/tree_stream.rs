@@ -108,7 +108,7 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
             }
 
             // Result is a new vector stream
-            unimplemented!();
+            Box::new(VecReader::from_vec(tokens))
         }
     }
 
