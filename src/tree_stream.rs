@@ -118,13 +118,7 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
     /// `0` is the top-most level of the tree, and `depth()-1` represent the bottom-most level (the level containing the tokens)
     ///
     pub fn read_level<'a>(&'a self, depth: usize) -> Box<SymbolReader<TokenType>+'a> {
-        if depth == self.annotations.len() {
-            // Just the tokens; this level is flat
-            self.tokens.read_output()
-        } else {
-            // Need to read 'through' the tree to deal with gaps to create the whole stream at this level
-            unimplemented!()
-        }
+        Box::new(self.read_level_tokens(depth).map_symbols(|token| token.output))
     }
 }
 
