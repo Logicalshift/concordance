@@ -35,7 +35,7 @@ pub struct TreeStream<InputSymbol, TokenType> {
     annotations: Vec<AnnotatedStream<TokenType, TokenType>>
 }
 
-impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+'static> TreeStream<InputSymbol, TokenType> {
+impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> TreeStream<InputSymbol, TokenType> {
     ///
     /// Creates a new tree stream from a tokenized stream
     ///
@@ -64,9 +64,50 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+'static> TreeStream<
     ///
     pub fn read_level_tokens<'a>(&'a self, depth: usize) -> Box<SymbolReader<Token<TokenType>>+'a> {
         if depth == self.annotations.len() {
-            // Just the tokens
+            // Just the tokens, mapping onto the original input stream
             self.tokens.read_tokens()
         } else {
+            // Build up a symbol reader from the output and input of this stream
+            let level  = (self.annotations.len()-1) - depth;
+            let stream = &self.annotations[level];
+
+            let mut tokens   = vec![];
+            let mut last_pos = 0..0;
+            let mut reader   = stream.read_tokens();
+
+            loop {
+                if let Some(level_token) = reader.next_symbol() {
+                    // Append input symbols if there is a gap
+                    if last_pos.end != level_token.location.start {
+                        let gap_range         = last_pos.end..level_token.location.start;
+                        let from_higher_level = stream.input_for_range(gap_range.clone());
+
+                        for pos in gap_range.clone() {
+                            tokens.push(Token::new(pos..pos+1, from_higher_level[pos-gap_range.start].clone()));
+                        }
+                    }
+
+                    // Update the last pos so we can detect gaps after it
+                    last_pos = level_token.location.clone();
+
+                    // Add this token
+                    tokens.push(level_token);
+                } else {
+                    // End of stream
+                    break;
+                }
+            }
+
+            // Append input tokens from the end of the stream
+            let end_pos  = stream.input_len();
+            let end_gap  = last_pos.end..end_pos;
+            let from_end = stream.input_for_range(end_gap.clone());
+
+            for pos in end_gap.clone() {
+                tokens.push(Token::new(pos..pos+1, from_end[pos-end_gap.start].clone()));
+            }
+
+            // Result is a new vector stream
             unimplemented!();
         }
     }
@@ -109,6 +150,24 @@ mod test {
         Digit,
         Identifier,
         Whitespace
+    }
+
+    impl Countable for TestToken {
+        fn next(&self) -> Self {
+            match *self {
+                TestToken::Digit        => TestToken::Identifier,
+                TestToken::Identifier   => TestToken::Whitespace,
+                TestToken::Whitespace   => TestToken::Digit
+            }
+        }
+
+        fn prev(&self) -> Self {
+            match *self {
+                TestToken::Digit        => TestToken::Whitespace,
+                TestToken::Identifier   => TestToken::Digit,
+                TestToken::Whitespace   => TestToken::Identifier
+            }
+        }
     }
 
     fn create_simple_tokenizer() -> SymbolRangeDfa<char, TestToken> {
