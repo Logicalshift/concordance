@@ -221,6 +221,30 @@ where MapFunction: FnMut(InputSymbol) -> OutputSymbol {
     }
 }
 
+///
+/// A VecReader consumes a vector, which can be read out using the SymbolReader trait
+///
+pub struct VecReader<Symbol> {
+    symbols: Vec<Symbol>
+}
+
+impl<Symbol> VecReader<Symbol> {
+    ///
+    /// Creates a new VecReader by consuming a Vec
+    ///
+    pub fn from_vec(vec: Vec<Symbol>) -> VecReader<Symbol> {
+        let mut reversed = vec;
+        reversed.reverse();
+        VecReader { symbols: reversed }
+    }
+}
+
+impl<Symbol> SymbolReader<Symbol> for VecReader<Symbol> {
+    fn next_symbol(&mut self) -> Option<Symbol> {
+        self.symbols.pop()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -229,6 +253,17 @@ mod test {
     fn can_read_from_vec() {
         let source      = vec![1, 2, 3];
         let mut reader  = source.read_symbols();
+
+        assert!(reader.next_symbol() == Some(1));
+        assert!(reader.next_symbol() == Some(2));
+        assert!(reader.next_symbol() == Some(3));
+        assert!(reader.next_symbol() == None);
+    }
+
+    #[test]
+    fn can_read_from_vecreader() {
+        let source      = vec![1, 2, 3];
+        let mut reader  = VecReader::from_vec(source);
 
         assert!(reader.next_symbol() == Some(1));
         assert!(reader.next_symbol() == Some(2));
@@ -247,9 +282,9 @@ mod test {
 
     #[test]
     fn can_map_stream() {
-        let source      = vec![1, 2, 3];
-        let mut reader  = source.read_symbols();
-        let result      = reader.map_symbols(|sym| sym+1).to_vec();
+        let source = vec![1, 2, 3];
+        let reader = source.read_symbols();
+        let result = reader.map_symbols(|sym| sym+1).to_vec();
 
         assert!(result == vec![2, 3, 4]);
     }
