@@ -212,6 +212,13 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     }
 
     ///
+    /// Retrieves the number of tokens in the output
+    ///
+    pub fn output_len(&self) -> usize {
+        self.tokenized.len()
+    }
+
+    ///
     /// Reads the tokenized output stream (only for the symbols that were recognised)
     ///
     pub fn read_output<'a>(&'a self) -> Box<SymbolReader<OutputSymbol> + 'a> {
@@ -457,6 +464,26 @@ mod test {
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         assert!(annotated.input_len() == 8);
+    }
+
+    #[test]
+    fn can_get_output_length() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+
+        assert!(annotated.output_len() == 5);
     }
 
     #[test]
