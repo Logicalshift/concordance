@@ -22,6 +22,7 @@
 use super::countable::*;
 use super::symbol_reader::*;
 use super::annotated_stream::*;
+use super::symbol_range_dfa::*;
 
 ///
 /// Represents a stream that has been decomposed into a tree
@@ -120,6 +121,19 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
     pub fn read_level<'a>(&'a self, depth: usize) -> Box<SymbolReader<TokenType>+'a> {
         Box::new(self.read_level_tokens(depth).map_symbols(|token| token.output))
     }
+
+    ///
+    /// Performs pattern matching on the 'top level', adding another level to the tree. Returns the number of symbols in the new stream
+    ///
+    pub fn tokenize_top_level(&mut self, dfa: &SymbolRangeDfa<TokenType, TokenType>) -> usize {
+        // Read the tokens at the top level
+        let next_level  = AnnotatedStream::from_tokenizer(dfa, self.read_level(0));
+        let num_matched = next_level.output_len();
+
+        self.annotations.push(next_level);
+
+        num_matched
+    }
 }
 
 ///
@@ -143,23 +157,30 @@ mod test {
     enum TestToken {
         Digit,
         Identifier,
-        Whitespace
+        Operator,
+        Whitespace,
+
+        Expression
     }
 
     impl Countable for TestToken {
         fn next(&self) -> Self {
             match *self {
                 TestToken::Digit        => TestToken::Identifier,
-                TestToken::Identifier   => TestToken::Whitespace,
-                TestToken::Whitespace   => TestToken::Digit
+                TestToken::Identifier   => TestToken::Operator,
+                TestToken::Operator     => TestToken::Whitespace,
+                TestToken::Whitespace   => TestToken::Expression,
+                TestToken::Expression   => TestToken::Digit
             }
         }
 
         fn prev(&self) -> Self {
             match *self {
-                TestToken::Digit        => TestToken::Whitespace,
+                TestToken::Digit        => TestToken::Expression,
                 TestToken::Identifier   => TestToken::Digit,
-                TestToken::Whitespace   => TestToken::Identifier
+                TestToken::Operator     => TestToken::Identifier,
+                TestToken::Whitespace   => TestToken::Operator,
+                TestToken::Expression   => TestToken::Whitespace
             }
         }
     }
@@ -169,6 +190,7 @@ mod test {
 
         token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
         token_matcher.add_pattern(MatchRange('a', 'z').repeat_forever(1), TestToken::Identifier);
+        token_matcher.add_pattern("+".into_pattern(), TestToken::Operator);
         token_matcher.add_pattern(" ".repeat_forever(1), TestToken::Whitespace);
 
         token_matcher.prepare_to_match()
