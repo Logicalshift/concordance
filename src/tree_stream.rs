@@ -125,6 +125,9 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
     ///
     /// Performs pattern matching on the 'top level', adding another level to the tree. Returns the number of symbols in the new stream
     ///
+    /// By matching a series of tokens against a regular pattern, we can further reduce a tokenized string, and build up a tree
+    /// representation of the string's contents. 'Holes' that do not match the pattern allow the tree to have variable depth:
+    ///
     pub fn tokenize_top_level(&mut self, dfa: &SymbolRangeDfa<TokenType, TokenType>) -> usize {
         // Read the tokens at the top level
         let next_level  = AnnotatedStream::from_tokenizer(dfa, self.read_level(0));
@@ -134,19 +137,6 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
 
         num_matched
     }
-}
-
-///
-/// Symbol reader that reads a 'level' of a tree
-///
-/// If the level has gaps in it, then those are filled in using the tokens from the level above
-///
-struct LevelReader<'a, InputSymbol: 'a, TokenType: 'static> {
-    // The source treestream that is being read
-    source: &'a TreeStream<InputSymbol, TokenType>,
-
-    // The stack of levels being processed: the readers and the last token seen from them
-    stack: Vec<(Box<SymbolReader<Token<TokenType>>+'a>, Option<Token<TokenType>>)>
 }
 
 #[cfg(test)]
@@ -196,6 +186,16 @@ mod test {
         token_matcher.prepare_to_match()
     }
 
+    fn create_expression_parser() -> SymbolRangeDfa<TestToken, TestToken> {
+        let mut token_matcher = TokenMatcher::new();
+
+        token_matcher.add_pattern(Match(vec![TestToken::Digit]), TestToken::Expression);
+        token_matcher.add_pattern(Match(vec![TestToken::Identifier]), TestToken::Expression);
+        token_matcher.add_pattern(Match(vec![TestToken::Expression, TestToken::Operator, TestToken::Expression]), TestToken::Expression);
+
+        token_matcher.prepare_to_match()
+    }
+
     #[test]
     pub fn can_iterate_over_base_stream() {
         let tokenizer        = create_simple_tokenizer();
@@ -204,5 +204,42 @@ mod test {
 
         assert!(tokenized_tree.depth() == 1);
         assert!(tokenized_tree.read_input().to_vec() == vec!['a', '+', '1']);
+    }
+
+    #[test]
+    pub fn can_reduce_expression() {
+        let tokenizer          = create_simple_tokenizer();
+        let parser             = create_expression_parser(); 
+        let tokenized_stream   = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
+        let mut tokenized_tree = TreeStream::new_with_tokens(tokenized_stream);
+
+        let num_expressions_1  = tokenized_tree.tokenize_top_level(&parser);
+        let num_expressions_2  = tokenized_tree.tokenize_top_level(&parser);
+
+        assert!(tokenized_tree.read_level(2).to_vec() == vec![TestToken::Identifier, TestToken::Operator, TestToken::Digit]);
+        assert!(tokenized_tree.read_level(1).to_vec() == vec![TestToken::Expression, TestToken::Operator, TestToken::Expression]);
+        assert!(tokenized_tree.read_level(0).to_vec() == vec![TestToken::Expression]);
+        assert!(num_expressions_1 == 2);            // 'Expression Operator Expression'
+        assert!(num_expressions_2 == 1);            // 'Expression'
+    }
+
+    #[test]
+    pub fn can_reduce_longer_expression() {
+        let tokenizer          = create_simple_tokenizer();
+        let parser             = create_expression_parser(); 
+        let tokenized_stream   = AnnotatedStream::from_tokenizer(&tokenizer, "a+1+b".read_symbols());
+        let mut tokenized_tree = TreeStream::new_with_tokens(tokenized_stream);
+
+        let num_expressions_1  = tokenized_tree.tokenize_top_level(&parser);
+        let num_expressions_2  = tokenized_tree.tokenize_top_level(&parser);
+        let num_expressions_3  = tokenized_tree.tokenize_top_level(&parser);
+
+        assert!(tokenized_tree.read_level(3).to_vec() == vec![TestToken::Identifier, TestToken::Operator, TestToken::Digit, TestToken::Operator, TestToken::Identifier]);
+        assert!(tokenized_tree.read_level(2).to_vec() == vec![TestToken::Expression, TestToken::Operator, TestToken::Expression, TestToken::Operator, TestToken::Expression]);
+        assert!(tokenized_tree.read_level(1).to_vec() == vec![TestToken::Expression, TestToken::Operator, TestToken::Expression]);
+        assert!(tokenized_tree.read_level(0).to_vec() == vec![TestToken::Expression]);
+        assert!(num_expressions_1 == 3);            // 'Expression Operator Expression Operator Expression'
+        assert!(num_expressions_2 == 1);            // 'Expression Operator Expression'
+        assert!(num_expressions_3 == 1);            // 'Expression'
     }
 }
