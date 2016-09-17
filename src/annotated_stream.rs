@@ -142,7 +142,7 @@ use super::symbol_range_dfa::*;
 #[derive(Clone)]
 pub struct AnnotatedStream<TokenType> {
     /// The tokenized version and where in the original they appear, in order
-    tokenized: Vec<(TokenType, Range<usize>)>
+    tokenized: Vec<Token<TokenType>>
 }
 
 impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
@@ -166,7 +166,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
 
             if let Some(output) = next_token {
                 // Got a token
-                tokens.push((output, pos..final_pos));
+                tokens.push(Token::new(pos..final_pos, output));
 
                 // Next token begins after this one
                 pos = final_pos;
@@ -175,7 +175,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
                 // Try again in case there are further tokens
 
                 // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
-                //  Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
+                // Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
                 pos += 1;
                 tokenizer.skip_input();
             } else {
@@ -200,7 +200,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     ///
     pub fn read_output<'a>(&'a self) -> Box<SymbolReader<TokenType> + 'a> {
         let full_output  = self.tokenized.read_symbols();
-        let only_symbols = full_output.map_symbols(|(token, _)| token); 
+        let only_symbols = full_output.map_symbols(|token| token.output);
 
         Box::new(only_symbols)
     }
@@ -209,15 +209,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     /// Reads the annotated stream as a series of tokens
     ///
     pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<TokenType>> + 'a> {
-        let full_output = self.tokenized.read_symbols();
-        let with_tokens = full_output.map_symbols(move |(output, location)| {
-            Token {
-                location: location.clone(),
-                output:   output
-            }
-        });
-
-        Box::new(with_tokens)
+        Box::new(self.tokenized.read_symbols())
     }
 
     ///
@@ -227,7 +219,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     ///
     fn find_token_index(&self, position: usize) -> Result<usize, usize> {
         // Try to find the specified position: assumes the tokens are in order (which they are if we generated this stream from left to right)
-        let found = self.tokenized.binary_search_by(|&(_, ref location)| location.start.cmp(&position));
+        let found = self.tokenized.binary_search_by(|&ref token| token.location.start.cmp(&position));
         
         // We're only searching on the start position: if we don't find it exactly, then the token might be in the preceding index
         match found {
@@ -237,7 +229,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
                 if index == 0 {
                     Err(0)
                 } else {
-                    if self.tokenized[index-1].1.end > position {
+                    if self.tokenized[index-1].location.end > position {
                         Ok(index-1)
                     } else {
                         Err(index)
@@ -254,14 +246,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
         let found_index = self.find_token_index(position).ok();
 
         // Build a token for this location
-        found_index.map(move |index| {
-            let (ref output, ref location) = self.tokenized[index];
-
-            Token { 
-                location: location.clone(),
-                output:   output.clone(),
-            }
-        })
+        found_index.map(move |index| { self.tokenized[index].clone() })
     }
 
     ///
@@ -280,8 +265,8 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
             }
 
             // Stop if we find a value after the range we're search for
-            let (_, ref token_location) = self.tokenized[end_index];
-            if token_location.start >= search_location.end {
+            let ref token = self.tokenized[end_index];
+            if token.location.start >= search_location.end {
                 break;
             }
 
@@ -290,12 +275,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
 
         // Generate a symbol reader for this range
         let token_range = &self.tokenized[start_index..end_index];
-        let with_tokens = token_range.iter().map_symbols(move |(output, location)| {
-            Token { 
-                location: location.clone(),
-                output:   output.clone(),
-            }
-        });
+        let with_tokens = token_range.iter();
 
         Box::new(with_tokens)
     }
@@ -363,7 +343,7 @@ impl<TokenType> Annotator<TokenType> {
     pub fn token(&mut self, token: TokenType) {
         let pos = self.current_pos;
 
-        self.stream.tokenized.push((token, self.start_pos..pos));
+        self.stream.tokenized.push(Token::new(self.start_pos..pos, token));
         self.start_pos = pos;
     }
 
