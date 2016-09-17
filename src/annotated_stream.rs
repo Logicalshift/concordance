@@ -345,6 +345,57 @@ impl<OutputSymbol> Token<OutputSymbol> {
     }
 }
 
+///
+/// An annotator makes it possible to create an annotated stream by manually tagging an input stream
+///
+pub struct Annotator<InputSymbol, TokenType> {
+    /// The stream that is being built
+    stream: AnnotatedStream<InputSymbol, TokenType>,
+
+    /// The start position of the current output symbol
+    start_pos: usize
+}
+
+impl<InputSymbol, TokenType> Annotator<InputSymbol, TokenType> {
+    ///
+    /// Creates a new annotator
+    ///
+    pub fn new() -> Annotator<InputSymbol, TokenType> {
+        Annotator { stream: AnnotatedStream { original: vec![], tokenized: vec![] }, start_pos: 0 }
+    }
+
+    ///
+    /// Adds a new input symbol
+    ///
+    pub fn push_input(&mut self, symbol: InputSymbol) {
+        self.stream.original.push(symbol);
+    }
+
+    ///
+    /// Annotates the symbols since the last token with the specified token
+    ///
+    pub fn token(&mut self, token: TokenType) {
+        let pos = self.stream.original.len();
+
+        self.stream.tokenized.push((token, self.start_pos..pos));
+        self.start_pos = pos;
+    }
+
+    ///
+    /// Skips the symbols (leaving them without a token) since the last token
+    ///
+    pub fn skip(&mut self) {
+        self.start_pos = self.stream.original.len();
+    }
+
+    ///
+    /// Finishes the annotated stream and returns the result
+    ///
+    pub fn finish(self) -> AnnotatedStream<InputSymbol, TokenType> {
+        self.stream
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::iter::FromIterator;
@@ -394,9 +445,9 @@ mod test {
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
 
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+        let annotated  = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
-        let fortytwo = annotated.find_token(4).expect("No token");
+        let fortytwo   = annotated.find_token(4).expect("No token");
         let whitespace = annotated.find_token(5).expect("No token");
 
         assert!(fortytwo.location.start == 3);
@@ -504,5 +555,53 @@ mod test {
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         assert!(annotated.input_for_range(3..6) == &['4', '2', ' ']);
+    }
+
+    #[test]
+    fn can_annotate_manually() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut annotator = Annotator::new();
+
+        annotator.push_input('1');
+        annotator.push_input('2');
+        annotator.token(TestToken::Digit);
+
+        annotator.push_input(' ');
+        annotator.token(TestToken::Whitespace);
+
+        annotator.push_input('4');
+        annotator.push_input('2');
+        annotator.token(TestToken::Digit);
+
+        annotator.push_input(' ');
+        annotator.token(TestToken::Whitespace);
+
+        annotator.push_input('1');
+        annotator.push_input('3');
+        annotator.token(TestToken::Digit);
+
+        let annotated = annotator.finish();
+
+        assert!(annotated.input_for_range(3..6) == &['4', '2', ' ']);
+        assert!(annotated.output_len() == 5);
+        assert!(annotated.input_len() == 8);
+
+        let fortytwo   = annotated.find_token(4).expect("No token");
+        let whitespace = annotated.find_token(5).expect("No token");
+
+        assert!(fortytwo.location.start == 3);
+        assert!(fortytwo.location.end == 5);
+        assert!(fortytwo.output == TestToken::Digit);
+        assert!(annotated.input_for_token(&fortytwo) == &['4', '2']);
+
+        assert!(whitespace.location.start == 5);
+        assert!(whitespace.location.end == 6);
+        assert!(whitespace.output == TestToken::Whitespace);
+        assert!(annotated.input_for_token(&whitespace) == &[' ']);
     }
 }
