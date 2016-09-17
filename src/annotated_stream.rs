@@ -80,9 +80,8 @@
 //! # let tokenizer = token_matcher.prepare_to_match();
 //! # 
 //! # let annotated_stream = AnnotatedStream::from_tokenizer(&tokenizer, "a+1".read_symbols());
-//! let mut input_stream  = annotated_stream.read_input();  // == ['a' '+' '1']
 //! let mut output_stream = annotated_stream.read_output(); // == [Identifier Plus Number]
-//! # assert!(input_stream.to_vec() == vec!['a', '+', '1']);
+//! # assert!(output_stream.to_vec() == vec![LexToken::Identifier, LexToken::Plus, LexToken::Number]);
 //! ```
 //!
 //! It's possible to work out which token each input symbol corresponds to:
@@ -105,7 +104,6 @@
 //! let middle_token = annotated_stream.find_token(1); // == Some(Token { matched: &['+'], output: Plus })
 //! # assert!(middle_token.is_some());
 //! # let unwrapped = middle_token.unwrap();
-//! # assert!(annotated_stream.input_for_token(&unwrapped) == &['+']);
 //! # assert!(unwrapped.output == LexToken::Plus);
 //! ```
 //!
@@ -139,94 +137,55 @@ use super::symbol_reader::*;
 use super::symbol_range_dfa::*;
 
 ///
-/// An annotated stream represents an original stream, with ranges tagged with tokens. This can be used to map between a
-/// tokenized stream and the original characters.
+/// An annotated stream represents how a stream was tagged with characters.
 ///
 #[derive(Clone)]
-pub struct AnnotatedStream<InputType, TokenType> {
-    /// The original stream that was tokenized
-    original: Vec<InputType>,
-
+pub struct AnnotatedStream<TokenType> {
     /// The tokenized version and where in the original they appear, in order
     tokenized: Vec<(TokenType, Range<usize>)>
 }
 
-impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> AnnotatedStream<InputSymbol, OutputSymbol> {
+impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     ///
     /// Given a stream and a DFA, tokenizes the stream and annotates it with the appropriate tokens
     ///
-    pub fn from_tokenizer<Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, OutputSymbol>, reader: Reader) -> AnnotatedStream<InputSymbol, OutputSymbol> {
+    pub fn from_tokenizer<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
         // Capture the contents of the original reader (we store them in the result)
-        let mut reader_m = reader;
-        let     original = reader_m.to_vec();
         let mut tokens   = vec![];
 
-        {
-            // Create a new reader to read our captured symbols
-            let token_reader  = original.read_symbols();
-            let mut tokenizer = Tokenizer::new_prepared(token_reader, dfa);
+        // Create a new reader to read our captured symbols
+        let mut tokenizer = Tokenizer::new_prepared(reader, dfa);
 
-            // Start tokenizing
-            let mut pos: usize = 0;
+        // Start tokenizing
+        let mut pos: usize = 0;
 
-            loop {
-                // Tokenize the next symbol
-                let next_token  = tokenizer.next_symbol();
-                let final_pos   = tokenizer.get_source_position();
+        loop {
+            // Tokenize the next symbol
+            let next_token  = tokenizer.next_symbol();
+            let final_pos   = tokenizer.get_source_position();
 
-                if let Some(output) = next_token {
-                    // Got a token
-                    tokens.push((output, pos..final_pos));
+            if let Some(output) = next_token {
+                // Got a token
+                tokens.push((output, pos..final_pos));
 
-                    // Next token begins after this one
-                    pos = final_pos;
-                } else if !tokenizer.at_end_of_reader() {
-                    // Skip tokens that don't form a match (returned none + not at the end of the reader)
-                    // Try again in case there are further tokens
+                // Next token begins after this one
+                pos = final_pos;
+            } else if !tokenizer.at_end_of_reader() {
+                // Skip tokens that don't form a match (returned none + not at the end of the reader)
+                // Try again in case there are further tokens
 
-                    // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
-                    //  Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
-                    pos += 1;
-                    tokenizer.skip_input();
-                } else {
-                    // Reached the end of the input
-                    break;
-                }
+                // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
+                //  Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
+                pos += 1;
+                tokenizer.skip_input();
+            } else {
+                // Reached the end of the input
+                break;
             }
         }
 
         // Annotated stream is ready
-        AnnotatedStream { original: original, tokenized: tokens }
-    }
-
-    ///
-    /// Reads the original stream for the original input for this stream
-    ///
-    pub fn read_input<'a>(&'a self) -> Box<SymbolReader<InputSymbol> + 'a> {
-        Box::new(self.original.read_symbols())
-    }
-
-    ///
-    /// Retrieves the input symbols for a particular token
-    ///
-    #[inline]
-    pub fn input_for_token<'a>(&'a self, token: &Token<OutputSymbol>) -> &'a [InputSymbol] {
-        &self.input_for_range(token.location.clone())
-    }
-
-    ///
-    /// Retrieves the input symbols for a particular range
-    ///
-    #[inline]
-    pub fn input_for_range<'a>(&'a self, range: Range<usize>) -> &'a [InputSymbol] {
-        &self.original[range]
-    }
-
-    ///
-    /// Retrieves the number of tokens in the input to this stream
-    ///
-    pub fn input_len(&self) -> usize {
-        self.original.len()
+        AnnotatedStream { tokenized: tokens }
     }
 
     ///
@@ -239,7 +198,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Reads the tokenized output stream (only for the symbols that were recognised)
     ///
-    pub fn read_output<'a>(&'a self) -> Box<SymbolReader<OutputSymbol> + 'a> {
+    pub fn read_output<'a>(&'a self) -> Box<SymbolReader<TokenType> + 'a> {
         let full_output  = self.tokenized.read_symbols();
         let only_symbols = full_output.map_symbols(|(token, _)| token); 
 
@@ -249,7 +208,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Reads the annotated stream as a series of tokens
     ///
-    pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<OutputSymbol>> + 'a> {
+    pub fn read_tokens<'a>(&'a self) -> Box<SymbolReader<Token<TokenType>> + 'a> {
         let full_output = self.tokenized.read_symbols();
         let with_tokens = full_output.map_symbols(move |(output, location)| {
             Token {
@@ -291,7 +250,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Finds the token at the specified position in this stream
     ///
-    pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<OutputSymbol>> {
+    pub fn find_token<'a>(&'a self, position: usize) -> Option<Token<TokenType>> {
         let found_index = self.find_token_index(position).ok();
 
         // Build a token for this location
@@ -308,7 +267,7 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
     ///
     /// Returns a symbol reader that reads all the tokens in a particular range of source positions
     ///
-    pub fn read_tokens_in_range<'a>(&'a self, search_location: Range<usize>) -> Box<SymbolReader<Token<OutputSymbol>> + 'a> {
+    pub fn read_tokens_in_range<'a>(&'a self, search_location: Range<usize>) -> Box<SymbolReader<Token<TokenType>> + 'a> {
         // Find the initial index
         let start_index = match self.find_token_index(search_location.start) { Ok(index) => index, Err(index) => index };
 
@@ -346,19 +305,19 @@ impl<InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static> Annotate
 /// A token represents an individual item in an annotated stream
 ///
 #[derive(Eq, PartialEq, Clone)]
-pub struct Token<OutputSymbol> {
+pub struct Token<TokenType> {
     /// Where this token appears in the output
     pub location: Range<usize>,
 
     /// The output symbol that was matched for this token
-    pub output: OutputSymbol
+    pub output: TokenType
 }
 
-impl<OutputSymbol> Token<OutputSymbol> {
+impl<TokenType> Token<TokenType> {
     ///
     /// Creates a new token
     ///
-    pub fn new(location: Range<usize>, output: OutputSymbol) -> Token<OutputSymbol> {
+    pub fn new(location: Range<usize>, output: TokenType) -> Token<TokenType> {
         Token { location: location, output: output }
     }
 }
@@ -366,41 +325,43 @@ impl<OutputSymbol> Token<OutputSymbol> {
 ///
 /// An annotator makes it possible to create an annotated stream by manually tagging an input stream
 ///
-pub struct Annotator<InputSymbol, TokenType> {
+pub struct Annotator<TokenType> {
     /// The stream that is being built
-    stream: AnnotatedStream<InputSymbol, TokenType>,
+    stream: AnnotatedStream<TokenType>,
 
     /// The start position of the current output symbol
-    start_pos: usize
+    start_pos: usize,
+
+    current_pos: usize
 }
 
-impl<InputSymbol, TokenType> Annotator<InputSymbol, TokenType> {
+impl<TokenType> Annotator<TokenType> {
     ///
     /// Creates a new annotator
     ///
-    pub fn new() -> Annotator<InputSymbol, TokenType> {
-        Annotator { stream: AnnotatedStream { original: vec![], tokenized: vec![] }, start_pos: 0 }
+    pub fn new() -> Annotator<TokenType> {
+        Annotator { stream: AnnotatedStream { tokenized: vec![] }, start_pos: 0, current_pos: 0 }
     }
 
     ///
     /// Adds a new input symbol
     ///
-    pub fn push_input(&mut self, symbol: InputSymbol) {
-        self.stream.original.push(symbol);
+    pub fn push_input<InputSymbol>(&mut self, symbol: InputSymbol) {
+        self.current_pos += 1
     }
 
     ///
     /// Appends a vector of input symbols to the result
     ///
-    pub fn append_input(&mut self, mut input: Vec<InputSymbol>) {
-        self.stream.original.append(&mut input);
+    pub fn append_input<InputSymbol>(&mut self, mut input: Vec<InputSymbol>) {
+        self.current_pos += input.len();
     }
 
     ///
     /// Annotates the symbols since the last token with the specified token
     ///
     pub fn token(&mut self, token: TokenType) {
-        let pos = self.stream.original.len();
+        let pos = self.current_pos;
 
         self.stream.tokenized.push((token, self.start_pos..pos));
         self.start_pos = pos;
@@ -410,33 +371,16 @@ impl<InputSymbol, TokenType> Annotator<InputSymbol, TokenType> {
     /// Skips the symbols (leaving them without a token) since the last token
     ///
     pub fn skip(&mut self) {
-        self.start_pos = self.stream.original.len();
+        self.start_pos = self.current_pos;
     }
 
     ///
     /// Finishes the annotated stream and returns the result
     ///
-    pub fn finish(self) -> AnnotatedStream<InputSymbol, TokenType> {
+    pub fn finish(self) -> AnnotatedStream<TokenType> {
         self.stream
     }
 }
-
-/**
- * Would like to do this for convenience.
- *
- * We can't, however as rust produces the nonsensical error 'expected type `char` but found type `char`'
-
-impl<char, TokenType> Annotator<char, TokenType> {
-    ///
-    /// Appends a string to the result
-    ///
-    pub fn append_string(&mut self, string: &str) {
-        for character in string.chars() {
-            self.push_input(character);
-        }
-    }
-}
-*/
 
 #[cfg(test)]
 mod test {
@@ -460,11 +404,9 @@ mod test {
 
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
-        let annotated_input  = annotated.read_input().to_vec();
         let annotated_output = annotated.read_output().to_vec();
         let annotated_tokens = annotated.read_tokens().to_vec();
 
-        assert!(annotated_input == vec!['1', '2', ' ', '4', '2', ' ', '1', '3']);
         assert!(annotated_output == vec![TestToken::Digit, TestToken::Whitespace, TestToken::Digit, TestToken::Whitespace, TestToken::Digit]);
 
         assert!(annotated_tokens[0].location.start == 0);
@@ -495,68 +437,10 @@ mod test {
         assert!(fortytwo.location.start == 3);
         assert!(fortytwo.location.end == 5);
         assert!(fortytwo.output == TestToken::Digit);
-        assert!(annotated.input_for_token(&fortytwo) == &['4', '2']);
 
         assert!(whitespace.location.start == 5);
         assert!(whitespace.location.end == 6);
         assert!(whitespace.output == TestToken::Whitespace);
-        assert!(annotated.input_for_token(&whitespace) == &[' ']);
-    }
-
-    #[test]
-    fn can_read_token_range() {
-        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
-        enum TestToken {
-            Digit,
-            Whitespace
-        }
-
-        let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
-
-        let dfa   = token_matcher.prepare_to_match();
-        let input = "12 42 13";
-
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
-
-        let some_output = annotated.read_tokens_in_range(4..7).to_vec();
-        let input_strings = some_output.iter().map(|token| {
-            let res: String = annotated.input_for_token(&token).iter().cloned().collect();
-            res
-        });
-        let input_strings_vec = Vec::from_iter(input_strings);
-
-        assert!(input_strings_vec == vec!["42", " ", "13"]);
-
-        let different_output = annotated.read_tokens_in_range(0..4).to_vec();
-        let different_strings = different_output.iter().map(|token| {
-            let res: String = annotated.input_for_token(&token).iter().cloned().collect();
-            res
-        });
-        let different_strings_vec = Vec::from_iter(different_strings);
-
-        assert!(different_strings_vec == vec!["12", " ", "42"]);
-    }
-
-    #[test]
-    fn can_get_input_length() {
-        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
-        enum TestToken {
-            Digit,
-            Whitespace
-        }
-
-        let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
-
-        let dfa   = token_matcher.prepare_to_match();
-        let input = "12 42 13";
-
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
-
-        assert!(annotated.input_len() == 8);
     }
 
     #[test]
@@ -577,26 +461,6 @@ mod test {
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         assert!(annotated.output_len() == 5);
-    }
-
-    #[test]
-    fn can_get_input_range() {
-        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
-        enum TestToken {
-            Digit,
-            Whitespace
-        }
-
-        let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
-
-        let dfa   = token_matcher.prepare_to_match();
-        let input = "12 42 13";
-
-        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
-
-        assert!(annotated.input_for_range(3..6) == &['4', '2', ' ']);
     }
 
     #[test]
@@ -628,9 +492,7 @@ mod test {
 
         let annotated = annotator.finish();
 
-        assert!(annotated.input_for_range(3..6) == &['4', '2', ' ']);
         assert!(annotated.output_len() == 5);
-        assert!(annotated.input_len() == 8);
 
         let fortytwo   = annotated.find_token(4).expect("No token");
         let whitespace = annotated.find_token(5).expect("No token");
@@ -638,11 +500,9 @@ mod test {
         assert!(fortytwo.location.start == 3);
         assert!(fortytwo.location.end == 5);
         assert!(fortytwo.output == TestToken::Digit);
-        assert!(annotated.input_for_token(&fortytwo) == &['4', '2']);
 
         assert!(whitespace.location.start == 5);
         assert!(whitespace.location.end == 6);
         assert!(whitespace.output == TestToken::Whitespace);
-        assert!(annotated.input_for_token(&whitespace) == &[' ']);
     }
 }
