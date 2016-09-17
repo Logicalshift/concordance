@@ -104,7 +104,7 @@
 //! let middle_token = annotated_stream.find_token(1); // == Some(Token { matched: &['+'], output: Plus })
 //! # assert!(middle_token.is_some());
 //! # let unwrapped = middle_token.unwrap();
-//! # assert!(unwrapped.output == LexToken::Plus);
+//! # assert!(unwrapped.output == Some(LexToken::Plus));
 //! ```
 //!
 //! And it's possible to read the fully tokenized form of the stream, or part of the stream:
@@ -157,7 +157,8 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
         let mut tokenizer = Tokenizer::new_prepared(reader, dfa);
 
         // Start tokenizing
-        let mut pos: usize = 0;
+        let mut last_match_pos = 0;
+        let mut pos: usize     = 0;
 
         loop {
             // Tokenize the next symbol
@@ -169,7 +170,8 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
                 tokens.push(Token::new(pos..final_pos, output));
 
                 // Next token begins after this one
-                pos = final_pos;
+                pos            = final_pos;
+                last_match_pos = pos;
             } else if !tokenizer.at_end_of_reader() {
                 // Skip tokens that don't form a match (returned none + not at the end of the reader)
                 // Try again in case there are further tokens
@@ -199,8 +201,8 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     /// Reads the tokenized output stream (only for the symbols that were recognised)
     ///
     pub fn read_output<'a>(&'a self) -> Box<SymbolReader<TokenType> + 'a> {
-        let full_output  = self.tokenized.read_symbols();
-        let only_symbols = full_output.map_symbols(|token| token.output);
+        let full_output  = self.tokenized.iter();
+        let only_symbols = full_output.filter_map(|token| token.output.clone());
 
         Box::new(only_symbols)
     }
@@ -289,16 +291,16 @@ pub struct Token<TokenType> {
     /// Where this token appears in the output
     pub location: Range<usize>,
 
-    /// The output symbol that was matched for this token
-    pub output: TokenType
+    /// The output symbol that was matched for this token, None if no input was matched for this range
+    pub output: Option<TokenType>
 }
 
 impl<TokenType> Token<TokenType> {
     ///
-    /// Creates a new token
+    /// Creates a new token for a matched output symbol
     ///
     pub fn new(location: Range<usize>, output: TokenType) -> Token<TokenType> {
-        Token { location: location, output: output }
+        Token { location: location, output: Some(output) }
     }
 }
 
@@ -391,7 +393,7 @@ mod test {
 
         assert!(annotated_tokens[0].location.start == 0);
         assert!(annotated_tokens[0].location.end == 2);
-        assert!(annotated_tokens[0].output == TestToken::Digit);
+        assert!(annotated_tokens[0].output == Some(TestToken::Digit));
     }
 
     #[test]
@@ -416,11 +418,11 @@ mod test {
 
         assert!(fortytwo.location.start == 3);
         assert!(fortytwo.location.end == 5);
-        assert!(fortytwo.output == TestToken::Digit);
+        assert!(fortytwo.output == Some(TestToken::Digit));
 
         assert!(whitespace.location.start == 5);
         assert!(whitespace.location.end == 6);
-        assert!(whitespace.output == TestToken::Whitespace);
+        assert!(whitespace.output == Some(TestToken::Whitespace));
     }
 
     #[test]
@@ -479,10 +481,10 @@ mod test {
 
         assert!(fortytwo.location.start == 3);
         assert!(fortytwo.location.end == 5);
-        assert!(fortytwo.output == TestToken::Digit);
+        assert!(fortytwo.output == Some(TestToken::Digit));
 
         assert!(whitespace.location.start == 5);
         assert!(whitespace.location.end == 6);
-        assert!(whitespace.output == TestToken::Whitespace);
+        assert!(whitespace.output == Some(TestToken::Whitespace));
     }
 }

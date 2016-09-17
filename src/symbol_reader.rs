@@ -63,6 +63,20 @@ impl<'a, Symbol: Clone+'a> SymbolReader<Symbol> for Iter<'a, Symbol> {
     }
 }
 
+// TODO: this should really be generalised to work on any Iterator, but using for Iterator<Item=Symbol> doesn't seem to match them
+// Only need FilterMaps for now so just implement it there
+use std::iter::FilterMap;
+impl<I: Iterator, F, Symbol: Clone> SymbolReader<Symbol> for FilterMap<I, F>
+where F: FnMut(I::Item) -> Option<Symbol> {
+    fn next_symbol(&mut self) -> Option<Symbol> {
+        if let Some(sym) = self.next() {
+            Some(sym.clone())
+        } else {
+            None
+        }
+    }
+}
+
 // Can read from streams
 
 //
