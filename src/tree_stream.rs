@@ -16,7 +16,7 @@
 
 //!
 //! A tree stream is the result of annotating an annotated stream. This forms a tree structure with the original input
-//! stream at the leaves.
+//! stream at the leaves. This can be used to represent the result of parsing an input.
 //!
 
 use super::countable::*;
@@ -136,6 +136,41 @@ impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> T
         self.annotations.push(next_level);
 
         num_matched
+    }
+}
+
+///
+/// Represents a node in a tree stream
+///
+pub struct TreeNode<'a, InputSymbol: 'a, OutputSymbol: 'a> {
+    /// The tree that this node is a part of
+    tree: &'a TreeStream<InputSymbol, OutputSymbol>,
+
+    /// The distance from the bottom of the tree that this node represents (0 = tokens, 1+ = a leven in the annotations)
+    level: usize,
+
+    /// The token representing the 'root' of this tree
+    token: Token<OutputSymbol>
+}
+
+impl<'a, InputSymbol: 'a, OutputSymbol: Clone+'a> TreeNode<'a, InputSymbol, OutputSymbol> {
+    ///
+    /// Retrieves the output symbol represented by this tree node
+    ///
+    pub fn get_symbol(&self) -> OutputSymbol {
+        self.token.output.clone()
+    }
+
+    ///
+    /// Retrieves the child nodes of this node (the empty set if this is a leaf node)
+    ///
+    pub fn get_children(&self) -> Vec<TreeNode<'a, InputSymbol, OutputSymbol>> {
+        if self.level == 0 {
+            // Level 0 is at the bottom
+            vec![]
+        } else {
+            unimplemented!()
+        }
     }
 }
 
