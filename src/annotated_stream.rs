@@ -25,7 +25,25 @@
 //! An annotated stream stores both the input and the output to the tokenizer, which makes it possible to retrieve the input that
 //! was matched to produce each token.
 //!
-//! It can be created by applying a tokenizer to an input stream:
+//! These streams can be made by manually annotating some input symbols:
+//!
+//! ```
+//! # use concordance::*;
+//! #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+//! enum LexToken {
+//!     Identifier, Number, Plus
+//! };
+//!
+//! let mut annotator = Annotator::new();
+//! 
+//! annotator.append_input(vec!['1', '2']);
+//! annotator.token(LexToken::Number);
+//!
+//! let annotated_stream = annotator.finish();          // == Number(12)
+//! # assert!(annotated_stream.read_output().to_vec().len() == 1);
+//! ```
+//!
+//! It can also be created by applying a tokenizer to an input stream:
 //!
 //! ```
 //! # use concordance::*;
@@ -372,6 +390,13 @@ impl<InputSymbol, TokenType> Annotator<InputSymbol, TokenType> {
     }
 
     ///
+    /// Appends a vector of input symbols to the result
+    ///
+    pub fn append_input(&mut self, mut input: Vec<InputSymbol>) {
+        self.stream.original.append(&mut input);
+    }
+
+    ///
     /// Annotates the symbols since the last token with the specified token
     ///
     pub fn token(&mut self, token: TokenType) {
@@ -581,8 +606,7 @@ mod test {
         annotator.push_input(' ');
         annotator.token(TestToken::Whitespace);
 
-        annotator.push_input('1');
-        annotator.push_input('3');
+        annotator.append_input(vec!['1', '3']);
         annotator.token(TestToken::Digit);
 
         let annotated = annotator.finish();
