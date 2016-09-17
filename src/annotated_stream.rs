@@ -421,6 +421,23 @@ impl<InputSymbol, TokenType> Annotator<InputSymbol, TokenType> {
     }
 }
 
+/**
+ * Would like to do this for convenience.
+ *
+ * We can't, however as rust produces the nonsensical error 'expected type `char` but found type `char`'
+
+impl<char, TokenType> Annotator<char, TokenType> {
+    ///
+    /// Appends a string to the result
+    ///
+    pub fn append_string(&mut self, string: &str) {
+        for character in string.chars() {
+            self.push_input(character);
+        }
+    }
+}
+*/
+
 #[cfg(test)]
 mod test {
     use std::iter::FromIterator;
