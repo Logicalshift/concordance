@@ -166,7 +166,12 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
             let final_pos   = tokenizer.get_source_position();
 
             if let Some(output) = next_token {
-                // Got a token
+                // Matched a token
+                if last_match_pos != pos {
+                    // Missed a range before this token
+                    tokens.push(Token::unmatched(last_match_pos..pos));
+                }
+
                 tokens.push(Token::new(pos..final_pos, output));
 
                 // Next token begins after this one
@@ -182,6 +187,10 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
                 tokenizer.skip_input();
             } else {
                 // Reached the end of the input
+                if last_match_pos != pos {
+                    // Missed a range before this token
+                    tokens.push(Token::unmatched(last_match_pos..pos));
+                }
                 break;
             }
         }
@@ -302,6 +311,13 @@ impl<TokenType> Token<TokenType> {
     pub fn new(location: Range<usize>, output: TokenType) -> Token<TokenType> {
         Token { location: location, output: Some(output) }
     }
+
+    ///
+    /// Returns a token that corresponds to unmatched input in the specified range
+    ///
+    pub fn unmatched(location: Range<usize>) -> Token<TokenType> {
+        Token { location: location, output: None }
+    }
 }
 
 ///
@@ -314,6 +330,7 @@ pub struct Annotator<TokenType> {
     /// The start position of the current output symbol
     start_pos: usize,
 
+    /// The position of the most recent output symbol
     current_pos: usize
 }
 
@@ -353,7 +370,11 @@ impl<TokenType> Annotator<TokenType> {
     /// Skips the symbols (leaving them without a token) since the last token
     ///
     pub fn skip(&mut self) {
-        self.start_pos = self.current_pos;
+        let pos = self.current_pos;
+        if self.start_pos != pos {
+            self.stream.tokenized.push(Token::unmatched(self.start_pos..pos));
+            self.start_pos = self.current_pos;
+        }
     }
 
     ///
@@ -366,7 +387,6 @@ impl<TokenType> Annotator<TokenType> {
 
 #[cfg(test)]
 mod test {
-    use std::iter::FromIterator;
     pub use super::super::*;
 
     #[test]
@@ -394,6 +414,37 @@ mod test {
         assert!(annotated_tokens[0].location.start == 0);
         assert!(annotated_tokens[0].location.end == 2);
         assert!(annotated_tokens[0].output == Some(TestToken::Digit));
+    }
+
+    #[test]
+    fn marks_skipped_tokens() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12  42  13  ";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+
+        let annotated_output = annotated.read_output().to_vec();
+        let annotated_tokens = annotated.read_tokens().to_vec();
+
+        assert!(annotated_output == vec![TestToken::Digit, TestToken::Digit, TestToken::Digit]);
+
+        assert!(annotated_tokens.len() == 6);
+
+        assert!(annotated_tokens[1].location.start == 2);
+        assert!(annotated_tokens[1].location.end == 4);
+        assert!(annotated_tokens[1].output == None);
+
+        assert!(annotated_tokens[5].location.start == 10);
+        assert!(annotated_tokens[5].location.end == 12);
+        assert!(annotated_tokens[5].output == None);
     }
 
     #[test]
