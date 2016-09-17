@@ -34,7 +34,7 @@ pub use self::matches::*;
 pub use self::tape::*;
 pub use self::tokenizer::*;
 pub use self::annotated_stream::*;
-pub use self::tree_stream::*;
+// pub use self::tree_stream::*;
 
 pub mod countable;
 pub mod symbol_range;
@@ -53,4 +53,4 @@ pub mod matches;
 pub mod tape;
 pub mod tokenizer;
 pub mod annotated_stream;
-pub mod tree_stream;
+// pub mod tree_stream;
