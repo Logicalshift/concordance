@@ -29,26 +29,29 @@ use super::symbol_range_dfa::*;
 ///
 #[derive(Clone)]
 pub struct TreeStream<InputSymbol, TokenType> {
+    /// The original input for this stream
+    input: Vec<InputSymbol>,
+
     /// How the original input stream maps onto tokens
-    tokens: AnnotatedStream<InputSymbol, TokenType>,
+    tokens: AnnotatedStream<TokenType>,
 
     /// The hierarchy of annotations. As a tree, the 'root' is considered to be the last entry in this list (it's built from the bottom up)
-    annotations: Vec<AnnotatedStream<TokenType, TokenType>>
+    annotations: Vec<AnnotatedStream<TokenType>>
 }
 
 impl<InputSymbol: Clone+Ord+Countable, TokenType: Clone+Ord+Countable+'static> TreeStream<InputSymbol, TokenType> {
     ///
     /// Creates a new tree stream from a tokenized stream
     ///
-    pub fn new_with_tokens(tokens: AnnotatedStream<InputSymbol, TokenType>) -> Self {
-        TreeStream { tokens: tokens, annotations: vec![] }
+    pub fn new_with_tokens(input: Vec<InputSymbol>, tokens: AnnotatedStream<TokenType>) -> Self {
+        TreeStream { input: input, tokens: tokens, annotations: vec![] }
     }
 
     ///
     /// Reads the input that made up this tree stream
     ///
     pub fn read_input<'a>(&'a self) -> Box<SymbolReader<InputSymbol>+'a> {
-        self.tokens.read_input()
+        Box::new(self.input.read_symbols())
     }
 
     ///
