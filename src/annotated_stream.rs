@@ -346,14 +346,14 @@ impl<TokenType> Annotator<TokenType> {
     ///
     /// Adds a new input symbol
     ///
-    pub fn push_input<InputSymbol>(&mut self, symbol: InputSymbol) {
+    pub fn push_input<InputSymbol>(&mut self, _: InputSymbol) {
         self.current_pos += 1
     }
 
     ///
     /// Appends a vector of input symbols to the result
     ///
-    pub fn append_input<InputSymbol>(&mut self, mut input: Vec<InputSymbol>) {
+    pub fn append_input<InputSymbol>(&mut self, input: Vec<InputSymbol>) {
         self.current_pos += input.len();
     }
 
