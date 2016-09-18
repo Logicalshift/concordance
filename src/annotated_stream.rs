@@ -157,7 +157,6 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
         let mut tokenizer = Tokenizer::new_prepared(reader, dfa);
 
         // Start tokenizing
-        let mut last_match_pos = 0;
         let mut pos: usize     = 0;
 
         loop {
@@ -167,18 +166,14 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
 
             if let Some(output) = next_token {
                 // Matched a token
-                if last_match_pos != pos {
-                    // Missed a range before this token
-                    tokens.push(Token::unmatched(last_match_pos..pos));
-                }
-
                 tokens.push(Token::new(pos..final_pos, output));
 
                 // Next token begins after this one
                 pos            = final_pos;
-                last_match_pos = pos;
             } else if !tokenizer.at_end_of_reader() {
-                // Skip tokens that don't form a match (returned none + not at the end of the reader)
+                // Add unmatched symbols for every token we skip
+                tokens.push(Token::unmatched(pos..pos+1));
+
                 // Try again in case there are further tokens
 
                 // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
@@ -187,10 +182,6 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
                 tokenizer.skip_input();
             } else {
                 // Reached the end of the input
-                if last_match_pos != pos {
-                    // Missed a range before this token
-                    tokens.push(Token::unmatched(last_match_pos..pos));
-                }
                 break;
             }
         }
@@ -434,7 +425,7 @@ mod test {
         token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
 
         let dfa   = token_matcher.prepare_to_match();
-        let input = "12  42  13  ";
+        let input = "12 42  13  ";
 
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
@@ -443,15 +434,19 @@ mod test {
 
         assert!(annotated_output == vec![TestToken::Digit, TestToken::Digit, TestToken::Digit]);
 
-        assert!(annotated_tokens.len() == 6);
+        assert!(annotated_tokens.len() == 8);
 
         assert!(annotated_tokens[1].location.start == 2);
-        assert!(annotated_tokens[1].location.end == 4);
+        assert!(annotated_tokens[1].location.end == 3);
         assert!(annotated_tokens[1].output == None);
 
-        assert!(annotated_tokens[5].location.start == 10);
-        assert!(annotated_tokens[5].location.end == 12);
-        assert!(annotated_tokens[5].output == None);
+        assert!(annotated_tokens[6].location.start == 9);
+        assert!(annotated_tokens[6].location.end == 10);
+        assert!(annotated_tokens[6].output == None);
+
+        assert!(annotated_tokens[7].location.start == 10);
+        assert!(annotated_tokens[7].location.end == 11);
+        assert!(annotated_tokens[7].output == None);
     }
 
     #[test]
@@ -501,6 +496,27 @@ mod test {
         let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
 
         assert!(annotated.output_len() == 5);
+    }
+
+    #[test]
+    fn can_get_output_tokens() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
+        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+
+        let dfa   = token_matcher.prepare_to_match();
+        let input = "12 42 13";
+
+        let annotated = AnnotatedStream::from_tokenizer(&dfa, input.read_symbols());
+
+        assert!(annotated.output_tokens_in_range(1..3)[0].output == Some(TestToken::Whitespace));
+        assert!(annotated.output_tokens_in_range(1..3)[1].output == Some(TestToken::Digit));
     }
 
     #[test]
