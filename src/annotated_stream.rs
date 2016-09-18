@@ -290,6 +290,13 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
 
         Box::new(with_tokens)
     }
+
+    ///
+    /// Retrieves a range of tokens from the outoput
+    ///
+    pub fn output_tokens_in_range<'a>(&'a self, location: Range<usize>) -> &'a [Token<TokenType>] {
+        &self.tokenized[location]
+    }
 }
 
 ///
