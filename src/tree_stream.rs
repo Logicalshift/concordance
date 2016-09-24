@@ -15,8 +15,36 @@
 //
 
 //!
-//! A tree stream is the result of annotating an annotated stream. This forms a tree structure with the original input
-//! stream at the leaves. This can be used to represent the result of parsing an input.
+//! A tree stream is a stream annotated with tokens in a hierarchical manner (similar to how XML or HTML marks up text). It
+//! is designed for performing markup from the bottom upwards unlike most tree structures.
+//!
+//! Tree streams are a slightly unusual approach to representing parse trees, and are well suited for cases where matches
+//! aren't exact or where an input stream contains more than one source language. They are built from the bottom up rather
+//! than the top down like most tree structures. This property means that a tree stream can represent a partial parse as
+//! a series of matched subtrees with the unrecognised parts of the input between them.
+//!
+//! The approach is basically a mark-up approach. Consider the phrase `a+1`. We could represent the output of that using a
+//! mark-up language as `<identifier>a</identifier><plus>+</plus><number>1</number>`. This flat representation is what the
+//! `AnnotatedStream` type provides. This could be considered as a stream of symbols `identifier plus number` Next, we might 
+//! identify that the identifiers and the numbers are subexpressions, so we might perform a further markup as 
+//! `<expr><identifier>a</identifier></expr><plus>+</plus><expr><number>1</number></expr>`. This can be flattened to the
+//! stream of symbols `expr plus expr`. Note that the markup forms a tree hierarchy, so each part can be expanded as if
+//! it were a standard parse tree. The final stage is to recognise that `expr plus expr` is itself an expression, with
+//! the resulting markup representation 
+//! `<expr><expr><identifier>a</identifier></expr><plus>+</plus><expr><number>1</number></expr></expr>`, or the single
+//! term `expr`.
+//!
+//! What's particularly interesting about this approach is that the language is context-free but each step can be performed
+//! by matching a regular expression, so this provides a way to generalize regular languages to match context-free languages.
+//! It's also not left-to-right, so it has none of the 'restart on error' issues that make it difficult to use traditional
+//! parsers with partially correct input (as might be found in a text editor). It's a deterministic algorithm - it doesn't rely
+//! on potentially unstable decision points like backtracking or other generalised parsers. Finally, it works on partial
+//! language 'sentences', naturally discovering the highest level structure that can be matched by a code snippet.
+//!
+//! The downside is one I haven't fully investigated yet: it relies on being able to recognise low-level lanuage structures
+//! with low levels of context. For example, identifiers mean different things when they're used  as part of function argument 
+//! declarations and shouldn't turn into expressions. This seems resolvable, maybe through matching substructures or maybe by
+//! identifying subtrees and then reparsing them.
 //!
 
 use super::countable::*;
