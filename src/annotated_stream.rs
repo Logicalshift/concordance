@@ -147,7 +147,7 @@ pub struct AnnotatedStream<TokenType> {
 
 impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     ///
-    /// Given a stream and a DFA, tokenizes the stream and annotates it with the appropriate tokens
+    /// Given a symbol reader and a DFA, tokenizes the symbols and annotates it with the appropriate tokens
     ///
     pub fn tokenize<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
         // Capture the contents of the original reader (we store them in the result)
