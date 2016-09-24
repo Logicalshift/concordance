@@ -62,15 +62,19 @@ impl<'a, Symbol: Clone> SplitSymbolReaderBuffer<'a, Symbol> {
     /// Clears out any buffered items that have been read by all readers
     ///
     fn clear_buffer(&mut self) {
-        let lowest_pos = self.positions.iter().min().map(|x| *x);
+        let lowest_pos = self.positions.iter()
+            .min()
+            .map(|x| *x);
 
         if let Some(lowest_pos) = lowest_pos {
-            for _ in 0..lowest_pos {
-                self.buffer.pop_front();
-            }
+            if lowest_pos < usize::max_value() {
+                for _ in 0..lowest_pos {
+                    self.buffer.pop_front();
+                }
 
-            for pos in self.positions.iter_mut() {
-                *pos -= lowest_pos;
+                for pos in self.positions.iter_mut() {
+                    *pos -= lowest_pos;
+                }
             }
         }
     }
@@ -124,6 +128,7 @@ impl<Symbol: Clone, Reader: SymbolReader<Symbol>> SplittableSymbolReader<Symbol>
     fn split<'a>(&'a mut self) -> (SplitSymbolReader<'a, Symbol>, SplitSymbolReader<'a, Symbol>) {
         // Generate the buffer that gets shared between the readers
         let mut buffer = SplitSymbolReaderBuffer::new(self);
+
         buffer.positions = vec![0,0];
 
         let buffer_ref = Rc::new(RefCell::new(buffer));
@@ -157,7 +162,6 @@ mod test {
         let source = vec![1,2,3];
         let mut stream = source.read_symbols();
 
-        /* -- TODO: stream.split crashes (WHHHHHY?)
         let (mut first, mut second) = stream.split();
 
         assert!(first.next_symbol() == Some(1));
@@ -168,10 +172,8 @@ mod test {
         assert!(second.next_symbol() == Some(3));
         assert!(first.next_symbol() == None);
         assert!(second.next_symbol() == None);
-        */
     }
 
-    /*
     #[test]
     fn can_split_stream_and_read_both_sequentially() {
         let source = vec![1,2,3];
@@ -182,5 +184,4 @@ mod test {
         assert!(first.to_vec() == vec![1,2,3]);
         assert!(second.to_vec() == vec![1,2,3]);
     }
-    */
 }
