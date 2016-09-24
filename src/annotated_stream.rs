@@ -147,6 +147,15 @@ pub struct AnnotatedStream<TokenType> {
 
 impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     ///
+    /// Cretes a new annotated stream from a set of tokens representing the annotations
+    ///
+    /// Annotations should be in start symbol order and must not overlap
+    ///
+    pub fn new(tokens: Vec<Token<TokenType>>) -> AnnotatedStream<TokenType> {
+        AnnotatedStream { tokenized: tokens }
+    }
+
+    ///
     /// Given a symbol reader and a DFA, tokenizes the symbols and annotates it with the appropriate tokens
     ///
     pub fn tokenize<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
@@ -204,6 +213,9 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     /// original stream.
     ///
     pub fn retokenize<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<Token<InputSymbol>>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
+        unimplemented!()
+
+        /*
         // Vector of the output tokens
         let mut tokens = vec![];
 
@@ -251,6 +263,7 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
 
         // Annotated stream is ready
         AnnotatedStream { tokenized: tokens }
+        */
     }
 
     ///
