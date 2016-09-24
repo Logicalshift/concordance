@@ -150,8 +150,62 @@ impl<TokenType: Clone+Ord+'static> AnnotatedStream<TokenType> {
     /// Given a symbol reader and a DFA, tokenizes the symbols and annotates it with the appropriate tokens
     ///
     pub fn tokenize<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<InputSymbol>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
-        // Capture the contents of the original reader (we store them in the result)
-        let mut tokens   = vec![];
+        // Vector of the output tokens
+        let mut tokens = vec![];
+
+        // Create a new reader to read our captured symbols
+        let mut tokenizer = Tokenizer::new_prepared(reader, dfa);
+
+        // Start tokenizing
+        let mut last_match_pos = 0;
+        let mut pos: usize     = 0;
+
+        loop {
+            // Tokenize the next symbol
+            let next_token  = tokenizer.next_symbol();
+            let final_pos   = tokenizer.get_source_position();
+
+            if let Some(output) = next_token {
+                // Matched a token
+                if last_match_pos != pos {
+                    // Missed a range before this token
+                    tokens.push(Token::unmatched(last_match_pos..pos));
+                }
+
+                tokens.push(Token::new(pos..final_pos, output));
+
+                // Next token begins after this one
+                pos            = final_pos;
+                last_match_pos = pos;
+            } else if !tokenizer.at_end_of_reader() {
+                // Skip tokens that don't form a match (returned none + not at the end of the reader)
+                // Try again in case there are further tokens
+
+                // TODO: it might actually be better to do this in the pattern matcher itself rather than here.
+                // Need to devise a way to make an NDFA that can match something along with the 'longest unmatched' string to do this
+                pos += 1;
+                tokenizer.skip_input();
+            } else {
+                // Reached the end of the input
+                if last_match_pos != pos {
+                    // Missed a range before this token
+                    tokens.push(Token::unmatched(last_match_pos..pos));
+                }
+                break;
+            }
+        }
+
+        // Annotated stream is ready
+        AnnotatedStream { tokenized: tokens }
+    }
+
+    ///
+    /// Matches an already tokenized stream against another DFA, producing a new set of tokens, with positions marked against the
+    /// original stream.
+    ///
+    pub fn retokenize<InputSymbol: Clone+Ord+Countable, Reader: SymbolReader<Token<InputSymbol>>>(dfa: &SymbolRangeDfa<InputSymbol, TokenType>, reader: Reader) -> AnnotatedStream<TokenType> {
+        // Vector of the output tokens
+        let mut tokens = vec![];
 
         // Create a new reader to read our captured symbols
         let mut tokenizer = Tokenizer::new_prepared(reader, dfa);
