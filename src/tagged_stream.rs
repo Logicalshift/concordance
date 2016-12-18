@@ -43,7 +43,7 @@ use super::symbol_reader::*;
 ///
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum TagSymbol<Base: Clone, Tag: Clone> {
-    Untagged(Vec<Base>),
+    Untagged(Base),
     Tagged(Tag, Vec<TaggedStream<Base, Tag>>)
 }
 
@@ -65,10 +65,10 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
         let mut symbols = vec![];
 
         while let Some(next_symbol) = reader.next_symbol() {
-            symbols.push(next_symbol);
+            symbols.push(TagSymbol::Untagged(next_symbol));
         }
 
         // Generate a simple tagged stream from the result
-        TaggedStream { data: vec![ TagSymbol::Untagged(symbols) ]}
+        TaggedStream { data: symbols }
     }
 }
