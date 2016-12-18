@@ -35,6 +35,7 @@
 //!
 
 use std::slice::Iter;
+use std::ops::Index;
 
 use super::symbol_reader::*;
 
@@ -72,6 +73,21 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
 
         // Generate a simple tagged stream from the result
         TaggedStream { data: symbols }
+    }
+
+    ///
+    /// The number of symbols in this stream
+    ///
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+}
+
+impl<Base: Clone, Tag: Clone> Index<usize> for TaggedStream<Base, Tag> {
+    type Output = TagSymbol<Base, Tag>;
+
+    fn index(&self, index: usize) -> &TagSymbol<Base, Tag> {
+        &self.data[index]
     }
 }
 
