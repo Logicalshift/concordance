@@ -36,6 +36,7 @@
 
 use std::slice::Iter;
 use std::ops::Index;
+use std::ops::Range;
 
 use super::symbol_reader::*;
 
@@ -81,6 +82,22 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
     pub fn len(&self) -> usize {
         self.data.len()
     }
+
+    ///
+    /// Replaces a range in this stream with a tag
+    ///
+    pub fn tag(&mut self, tag: Tag, range: Range<usize>) {
+        // Create a tag to replace the range
+        let replaced_symbols    = self.data[range.clone()].to_vec();
+        let tag_symbol          = TagSymbol::Tagged(tag, TaggedStream { data: replaced_symbols });
+
+        // Draining seems to be for reading a range but does double duty for deleting a range?
+        // I don't think rust has a way to replace a range in a vector, or at least not one that's easy to find in the docs.
+        self.data.drain(range.clone());
+
+        // Draining then inserting is inefficient compared to flat out replacing items :-/ This may be possible but the vec docs aren't very easy to read
+        self.data.insert(range.start, tag_symbol);
+    }
 }
 
 impl<Base: Clone, Tag: Clone> Index<usize> for TaggedStream<Base, Tag> {
@@ -97,5 +114,50 @@ impl<'a, Base: Clone, Tag: Clone> SymbolSource<'a, TagSymbol<Base, Tag>> for &'a
     /// Returns a new object that can read the symbols from this one
     fn read_symbols(self) -> Self::SymbolReader {
         self.data.read_symbols()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::*;
+
+    #[test]
+    fn can_tag_range() {
+        #[derive(Clone, PartialEq, Eq, Copy)]
+        enum Tags {
+            Hello,
+            World
+        }
+
+        let mut tagged: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
+
+        tagged.tag(Tags::Hello, 0..5);
+        tagged.tag(Tags::World, 1..6);
+
+        assert!(tagged.len() == 2);
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == Tags::Hello);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('H'));
+            assert!(stream[1] == TagSymbol::Untagged('e'));
+            assert!(stream[2] == TagSymbol::Untagged('l'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('o'));
+        } else {
+            assert!(false);
+        }
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[1] {
+            assert!(*tag == Tags::World);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('W'));
+            assert!(stream[1] == TagSymbol::Untagged('o'));
+            assert!(stream[2] == TagSymbol::Untagged('r'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('d'));
+        } else {
+            assert!(false);
+        }
     }
 }
