@@ -35,6 +35,7 @@ pub use self::tape::*;
 pub use self::split_reader::*;
 pub use self::tokenizer::*;
 pub use self::annotated_stream::*;
+pub use self::tagged_stream::*;
 // pub use self::tree_stream::*;
 
 pub mod countable;
@@ -55,4 +56,5 @@ pub mod tape;
 pub mod split_reader;
 pub mod tokenizer;
 pub mod annotated_stream;
+pub mod tagged_stream;
 // pub mod tree_stream;
