@@ -34,7 +34,9 @@
 //! ```
 //!
 
-use super::symbol_reader::*; 
+use std::slice::Iter;
+
+use super::symbol_reader::*;
 
 ///
 /// Represents a symbol in a tagged stream.
@@ -70,5 +72,14 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
 
         // Generate a simple tagged stream from the result
         TaggedStream { data: symbols }
+    }
+}
+
+impl<'a, Base: Clone, Tag: Clone> SymbolSource<'a, TagSymbol<Base, Tag>> for &'a TaggedStream<Base, Tag> {
+    type SymbolReader = Iter<'a, TagSymbol<Base, Tag>>;
+
+    /// Returns a new object that can read the symbols from this one
+    fn read_symbols(self) -> Self::SymbolReader {
+        self.data.read_symbols()
     }
 }
