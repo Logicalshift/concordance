@@ -47,7 +47,7 @@ use super::symbol_reader::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum TagSymbol<Base: Clone, Tag: Clone> {
     Untagged(Base),
-    Tagged(Tag, Vec<TaggedStream<Base, Tag>>)
+    Tagged(Tag, TaggedStream<Base, Tag>)
 }
 
 ///
