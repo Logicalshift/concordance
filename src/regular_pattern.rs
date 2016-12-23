@@ -359,20 +359,20 @@ pub trait PatternCombiner<Symbol: Clone, SecondPattern: IntoPattern<Symbol>> {
     fn or(self, pattern: SecondPattern) -> Pattern<Symbol>;
 }
 
-impl<Symbol: Clone, PatternType: IntoPattern<Symbol>> PatternTransformer<Symbol> for PatternType {
+impl<Symbol: Clone> PatternTransformer<Symbol> for Pattern<Symbol> {
     fn repeat_forever(self, min_count: u32) -> Pattern<Symbol> {
-        RepeatInfinite(min_count, Box::new(self.into_pattern()))
+        RepeatInfinite(min_count, Box::new(self))
     }
 
     fn repeat(self, count: Range<u32>) -> Pattern<Symbol> {
-        Repeat(count, Box::new(self.into_pattern()))
+        Repeat(count, Box::new(self))
     }
 }
 
-impl<Symbol: Clone, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPattern<Symbol>> PatternCombiner<Symbol, SecondPatternType> for PatternType {
+impl<Symbol: Clone, SecondPatternType: IntoPattern<Symbol>> PatternCombiner<Symbol, SecondPatternType> for Pattern<Symbol> {
     fn append(self, pattern: SecondPatternType) -> Pattern<Symbol> {
         // Get the two patterns to combine
-        let first_pattern   = self.into_pattern();
+        let first_pattern   = self;
         let second_pattern  = pattern.into_pattern();
 
         // Combination rules depend on what the patterns are
@@ -406,7 +406,7 @@ impl<Symbol: Clone, PatternType: IntoPattern<Symbol>, SecondPatternType: IntoPat
 
     fn or(self, pattern: SecondPatternType) -> Pattern<Symbol> {
         // Get the two patterns to combine
-        let first_pattern   = self.into_pattern();
+        let first_pattern   = self;
         let second_pattern  = pattern.into_pattern();
 
         // Combination rules depend on what the patterns are
