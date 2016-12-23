@@ -197,20 +197,20 @@ mod test {
 
     #[test]
     fn match_with_zero_or_more_alternatives() {
-        assert!(matches("", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(0));
-        assert!(matches("abc", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
-        assert!(matches("def", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
-        assert!(matches("abcabc", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
-        assert!(matches("defdef", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
+        assert!(matches("", (exactly("abc").repeat_forever(0)).or(exactly("def").repeat_forever(0))) == Some(0));
+        assert!(matches("abc", (exactly("abc").repeat_forever(0)).or(exactly("def").repeat_forever(0))) == Some(3));
+        assert!(matches("def", (exactly("abc").repeat_forever(0)).or(exactly("def").repeat_forever(0))) == Some(3));
+        assert!(matches("abcabc", (exactly("abc").repeat_forever(0)).or(exactly("def").repeat_forever(0))) == Some(6));
+        assert!(matches("defdef", (exactly("abc").repeat_forever(0)).or(exactly("def").repeat_forever(0))) == Some(6));
     }
 
     #[test]
     fn match_with_one_or_more_alternatives() {
-        assert!(matches("", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == None);
-        assert!(matches("abc", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
-        assert!(matches("def", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
-        assert!(matches("abcabc", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
-        assert!(matches("defdef", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
+        assert!(matches("", (exactly("abc").repeat_forever(1)).or(exactly("def").repeat_forever(1))) == None);
+        assert!(matches("abc", (exactly("abc").repeat_forever(1)).or(exactly("def").repeat_forever(1))) == Some(3));
+        assert!(matches("def", (exactly("abc").repeat_forever(1)).or(exactly("def").repeat_forever(1))) == Some(3));
+        assert!(matches("abcabc", (exactly("abc").repeat_forever(1)).or(exactly("def").repeat_forever(1))) == Some(6));
+        assert!(matches("defdef", (exactly("abc").repeat_forever(1)).or(exactly("def").repeat_forever(1))) == Some(6));
     }
 
     #[test]

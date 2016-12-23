@@ -473,7 +473,7 @@ mod test {
 
         let mut token_matcher = TokenMatcher::new();
         token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(0), TestToken::Whitespace);
 
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
@@ -531,7 +531,7 @@ mod test {
 
         let mut token_matcher = TokenMatcher::new();
         token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(0), TestToken::Whitespace);
 
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";
@@ -560,7 +560,7 @@ mod test {
 
         let mut token_matcher = TokenMatcher::new();
         token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Digit);
-        token_matcher.add_pattern(" ".repeat_forever(0), TestToken::Whitespace);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(0), TestToken::Whitespace);
 
         let dfa   = token_matcher.prepare_to_match();
         let input = "12 42 13";

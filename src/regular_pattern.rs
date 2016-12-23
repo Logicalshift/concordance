@@ -476,7 +476,7 @@ mod test {
 
     #[test]
     fn can_append_pattern_combine_matchalls_right() {
-        let pattern = "abc".append(MatchAll(vec!["def".to_pattern()]));
+        let pattern = exactly("abc").append(MatchAll(vec!["def".to_pattern()]));
 
         assert!(pattern == MatchAll(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
     }
@@ -497,7 +497,7 @@ mod test {
 
     #[test]
     fn can_or_pattern() {
-        let pattern = "abc".or("def");
+        let pattern = exactly("abc").or("def");
 
         assert!(pattern == MatchAny(vec![Match(vec!['a', 'b', 'c']), Match(vec!['d', 'e', 'f'])]));
     }
@@ -511,7 +511,7 @@ mod test {
 
     #[test]
     fn can_build_ndfa() {
-        let pattern = "abc".or("xyz").repeat_forever(0);
+        let pattern = exactly("abc").or("xyz").repeat_forever(0);
         let ndfa = pattern.to_ndfa("success");
 
         assert!(ndfa.count_states() > 1);

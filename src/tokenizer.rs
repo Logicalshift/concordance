@@ -218,8 +218,8 @@ mod test {
         }
 
         let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        token_matcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        token_matcher.add_pattern(exactly("a").repeat_forever(1), TestToken::AllAs);
+        token_matcher.add_pattern(exactly("b").repeat_forever(1), TestToken::AllBs);
 
         assert!(matches("aaaa", &token_matcher) == Some(4));
         assert!(matches("bbbbb", &token_matcher) == Some(5));
@@ -236,8 +236,8 @@ mod test {
         }
 
         let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern("a".repeat_forever(1), TestToken::AllAs);
-        token_matcher.add_pattern("b".repeat_forever(1), TestToken::AllBs);
+        token_matcher.add_pattern(exactly("a").repeat_forever(1), TestToken::AllAs);
+        token_matcher.add_pattern(exactly("b").repeat_forever(1), TestToken::AllBs);
 
         let matcher = token_matcher.prepare_to_match();
 
@@ -254,8 +254,8 @@ mod test {
         }
 
         let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern("a".repeat_forever(0), TestToken::AllAs);
-        token_matcher.add_pattern("b".repeat_forever(0), TestToken::AllBs);
+        token_matcher.add_pattern(exactly("a").repeat_forever(0), TestToken::AllAs);
+        token_matcher.add_pattern(exactly("b").repeat_forever(0), TestToken::AllBs);
 
         let matcher = token_matcher.prepare_to_match();
 
@@ -272,8 +272,8 @@ mod test {
         }
 
         let mut token_matcher = TokenMatcher::new();
-        token_matcher.add_pattern("a".repeat_forever(1).append("b"), TestToken::Aaab);
-        token_matcher.add_pattern("a".append("b".repeat_forever(1)), TestToken::Abbb);
+        token_matcher.add_pattern(exactly("a").repeat_forever(1).append("b"), TestToken::Aaab);
+        token_matcher.add_pattern(exactly("a").append(exactly("b").repeat_forever(1)), TestToken::Abbb);
 
         let matcher = token_matcher.prepare_to_match();
 
