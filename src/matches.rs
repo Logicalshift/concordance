@@ -21,11 +21,11 @@
 //!
 //! ```
 //! # use concordance::*;
-//! # assert!(matches("abcabc", "abc".repeat_forever(1)) == Some(6));
-//! # assert!(matches("abcabcabc", "abc".repeat_forever(1)).is_some());
-//! # assert!(matches("abc", "abc").is_some());
-//! # assert!(matches("def", "abc".repeat_forever(1)).is_none());
-//! if matches("abcabc", "abc".repeat_forever(1)).is_some() { /* ... */ }
+//! # assert!(matches("abcabc", exactly("abc").repeat_forever(1)) == Some(6));
+//! # assert!(matches("abcabcabc", exactly("abc").repeat_forever(1)).is_some());
+//! # assert!(matches("abc", exactly("abc")).is_some());
+//! # assert!(matches("def", exactly("abc").repeat_forever(1)).is_none());
+//! if matches("abcabc", exactly("abc").repeat_forever(1)).is_some() { /* ... */ }
 //! ```
 //!
 //! To determine if a string exactly matches a pattern, compare to the string length like this:
@@ -33,10 +33,10 @@
 //! ```
 //! # use concordance::*;
 //! let input_string = "abcabc";
-//! let pattern      = "abc".repeat_forever(1);
+//! let pattern      = exactly("abc").repeat_forever(1);
 //!
 //! if matches(input_string, pattern) == Some(input_string.len()) { }
-//! # assert!(matches(input_string, "abc".repeat_forever(1)) == Some(input_string.len()));
+//! # assert!(matches(input_string, exactly("abc").repeat_forever(1)) == Some(input_string.len()));
 //! ```
 //!
 
@@ -57,7 +57,7 @@ use super::prepare::*;
 /// ```
 /// # use concordance::*;
 /// let input_string = "abcabc";
-/// let pattern      = "abc".repeat_forever(1);
+/// let pattern      = exactly("abc").repeat_forever(1);
 /// let matcher      = pattern.prepare_to_match();
 ///
 /// let match_result = match_pattern(matcher.start(), &mut input_string.read_symbols()); // == Accept(6, &())
@@ -105,10 +105,10 @@ fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRan
 ///
 /// ```
 /// # use concordance::*;
-/// matches("abc", "abc");                      // Returns Some(3)
-/// matches("abcabc", "abc");                   // Also returns Some(3) as 'abc' matches the pattern
-/// matches("abcabc", "abc".repeat_forever(0)); // Returns Some(6)
-/// matches("ab", "abc");                       // Doesn't match: returns None
+/// matches("abc", "abc");                               // Returns Some(3)
+/// matches("abcabc", "abc");                            // Also returns Some(3) as 'abc' matches the pattern
+/// matches("abcabc", exactly("abc").repeat_forever(0)); // Returns Some(6)
+/// matches("ab", "abc");                                // Doesn't match: returns None
 /// ```
 ///
 /// It's worth noting that this is not just limited to strings and characters. For example, vectors will work too:
@@ -139,7 +139,7 @@ where   Prepare: PrepareToMatch<SymbolRangeDfa<Symbol, OutputSymbol>>
 ///
 /// ```
 /// # use concordance::*;
-/// let prepared = "abc".repeat_forever(1).prepare_to_match();
+/// let prepared = exactly("abc").repeat_forever(1).prepare_to_match();
 ///
 /// matches_prepared("abcabc", &prepared);      // == Some(6)
 /// matches_prepared("abc", &prepared);         // == Some(3)
@@ -162,12 +162,12 @@ mod test {
 
     #[test]
     fn match_multiple_repeats() {
-        assert!(matches("abcabc", "abc".repeat_forever(1)).is_some());
+        assert!(matches("abcabc", exactly("abc").repeat_forever(1)).is_some());
     }
 
     #[test]
     fn match_prepared() {
-        let prepared = "abc".repeat_forever(1).prepare_to_match();
+        let prepared = exactly("abc").repeat_forever(1).prepare_to_match();
 
         assert!(matches_prepared("abcabc", &prepared) == Some(6));
         assert!(matches_prepared("abc", &prepared) == Some(3));
@@ -176,53 +176,53 @@ mod test {
 
     #[test]
     fn match_single_repeat() {
-        assert!(matches("abc", "abc".repeat_forever(1)).is_some());
+        assert!(matches("abc", exactly("abc").repeat_forever(1)).is_some());
     }
 
     #[test]
     fn match_with_zero_or_more() {
-        assert!(matches("abc", "abc".repeat_forever(0)) == Some(3));
-        assert!(matches("abcabc", "abc".repeat_forever(0)) == Some(6));
-        assert!(matches("abcabcabc", "abc".repeat_forever(0)) == Some(9));
+        assert!(matches("abc", exactly("abc").repeat_forever(0)) == Some(3));
+        assert!(matches("abcabc", exactly("abc").repeat_forever(0)) == Some(6));
+        assert!(matches("abcabcabc", exactly("abc").repeat_forever(0)) == Some(9));
     }
 
     #[test]
     fn match_with_zero_or_more_following() {
-        assert!(matches("abc", "abc".repeat_forever(0).append("def")).is_none());
-        assert!(matches("abcabc", "abc".repeat_forever(0).append("def")).is_none());
+        assert!(matches("abc", exactly("abc").repeat_forever(0).append("def")).is_none());
+        assert!(matches("abcabc", exactly("abc").repeat_forever(0).append("def")).is_none());
 
-        assert!(matches("abcdef", "abc".repeat_forever(0).append("def")).is_some());
-        assert!(matches("abcabcdef", "abc".repeat_forever(0).append("def")).is_some());
+        assert!(matches("abcdef", exactly("abc").repeat_forever(0).append("def")).is_some());
+        assert!(matches("abcabcdef", exactly("abc").repeat_forever(0).append("def")).is_some());
     }
 
     #[test]
     fn match_with_zero_or_more_alternatives() {
-        assert!(matches("", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(0));
-        assert!(matches("abc", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
-        assert!(matches("def", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
-        assert!(matches("abcabc", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
-        assert!(matches("defdef", ("abc".repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
+        assert!(matches("", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(0));
+        assert!(matches("abc", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
+        assert!(matches("def", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(3));
+        assert!(matches("abcabc", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
+        assert!(matches("defdef", (exactly("abc").repeat_forever(0)).or("def".repeat_forever(0))) == Some(6));
     }
 
     #[test]
     fn match_with_one_or_more_alternatives() {
-        assert!(matches("", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == None);
-        assert!(matches("abc", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
-        assert!(matches("def", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
-        assert!(matches("abcabc", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
-        assert!(matches("defdef", ("abc".repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
+        assert!(matches("", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == None);
+        assert!(matches("abc", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
+        assert!(matches("def", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(3));
+        assert!(matches("abcabc", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
+        assert!(matches("defdef", (exactly("abc").repeat_forever(1)).or("def".repeat_forever(1))) == Some(6));
     }
 
     #[test]
     fn match_limited_range() {
-        assert!(matches("abc", "abc".repeat(2..4)).is_none());
-        assert!(matches("abcabc", "abc".repeat(2..4)).is_some());
-        assert!(matches("abcabcabc", "abc".repeat(2..4)) == Some(3*3));
-        assert!(matches("abcabcabcabc", "abc".repeat(2..4)) == Some(3*3));
+        assert!(matches("abc", exactly("abc").repeat(2..4)).is_none());
+        assert!(matches("abcabc", exactly("abc").repeat(2..4)).is_some());
+        assert!(matches("abcabcabc", exactly("abc").repeat(2..4)) == Some(3*3));
+        assert!(matches("abcabcabcabc", exactly("abc").repeat(2..4)) == Some(3*3));
     }
 
     #[test]
     fn match_zero_repeats() {
-        assert!(matches("", "abc".repeat_forever(0)).is_some());
+        assert!(matches("", exactly("abc").repeat_forever(0)).is_some());
     }
 }
