@@ -44,7 +44,7 @@
 //!
 //! ```
 //! # use concordance::*;
-//! let some_counting = exactly(vec![1, 2, 3]).repeat_forever(1);
+//! let some_counting = exactly(&vec![1, 2, 3]).repeat_forever(1);
 //! ```
 //!
 
