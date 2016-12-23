@@ -224,13 +224,13 @@ impl<Symbol: Clone+Ord+Countable+'static> ToNdfa<SymbolRange<Symbol>> for ToPatt
 }
 
 impl ToNdfa<SymbolRange<char>> for str {
-    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<char>, OutputSymbol>> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<char>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }
 
 impl<Symbol: Clone+Ord+Countable+'static> ToNdfa<SymbolRange<Symbol>> for [Symbol] {
-    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<SymbolRange<Symbol>, OutputSymbol>> {
         self.to_pattern().to_ndfa(output)
     }
 }

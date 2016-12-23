@@ -96,7 +96,7 @@ pub trait MutableStateMachine<InputSymbol, OutputSymbol> : StateMachine<InputSym
 /// the output state.
 ///
 pub trait ToNdfa<InputSymbol> {
-    fn to_ndfa<OutputSymbol>(&self, output: OutputSymbol) -> Box<StateMachine<InputSymbol, OutputSymbol>>;
+    fn to_ndfa<OutputSymbol: 'static>(&self, output: OutputSymbol) -> Box<StateMachine<InputSymbol, OutputSymbol>>;
 }
 
 ///
