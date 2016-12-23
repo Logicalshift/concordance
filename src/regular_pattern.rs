@@ -33,9 +33,9 @@
 //!
 //! ```
 //! # use concordance::*;
-//! let stuff_or_nonsense = literal("stuff").or("nonsense");
-//! let any_amount_of_stuff = literal("stuff").repeat_forever(1);
-//! let went_to_market = literal("piggies").repeat(0..5);
+//! let stuff_or_nonsense = exactly("stuff").or("nonsense");
+//! let any_amount_of_stuff = exactly("stuff").repeat_forever(1);
+//! let went_to_market = exactly("piggies").repeat(0..5);
 //! ```
 //!
 //! For convenience, these methods will work on any type that can be converted into a pattern. Every regular expression
@@ -44,7 +44,7 @@
 //!
 //! ```
 //! # use concordance::*;
-//! let some_counting = literal(vec![1, 2, 3]).repeat_forever(1);
+//! let some_counting = exactly(vec![1, 2, 3]).repeat_forever(1);
 //! ```
 //!
 
@@ -344,7 +344,7 @@ pub trait PatternTransformer<Symbol: Clone> {
 /// Creates a value that is matched literally in a pattern
 ///
 #[inline]
-pub fn literal<Symbol: Clone, PatternType: IntoPattern<Symbol>>(item: PatternType) -> Pattern<Symbol> {
+pub fn exactly<Symbol: Clone, PatternType: IntoPattern<Symbol>>(item: PatternType) -> Pattern<Symbol> {
     item.into_pattern()
 }
 
@@ -427,7 +427,7 @@ mod test {
 
     #[test]
     fn can_convert_vec_to_pattern() {
-        let pattern = literal(&vec![0, 1, 2]);
+        let pattern = exactly(&vec![0, 1, 2]);
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
@@ -435,7 +435,7 @@ mod test {
     /*
     #[test]
     fn can_convert_array_to_pattern() {
-        let pattern = literal([0, 1, 2]);
+        let pattern = exactly([0, 1, 2]);
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
@@ -443,28 +443,28 @@ mod test {
 
     #[test]
     fn can_convert_string_to_pattern() {
-        let pattern = literal("abc");
+        let pattern = exactly("abc");
 
         assert!(pattern == Match(vec!['a', 'b', 'c']));
     }
 
     #[test]
     fn can_repeat_pattern() {
-        let pattern = literal("abc").repeat(1..2);
+        let pattern = exactly("abc").repeat(1..2);
 
         assert!(pattern == Repeat(1..2, Box::new(Match(vec!['a', 'b', 'c']))));
     }
 
     #[test]
     fn can_repeat_pattern_forever() {
-        let pattern = literal("abc").repeat_forever(0);
+        let pattern = exactly("abc").repeat_forever(0);
 
         assert!(pattern == RepeatInfinite(0, Box::new(Match(vec!['a', 'b', 'c']))));
     }
 
     #[test]
     fn can_append_pattern_combine_matches() {
-        let pattern = literal("abc").append("def");
+        let pattern = exactly("abc").append("def");
 
         assert!(pattern == Match(vec!['a', 'b', 'c', 'd', 'e', 'f']));
     }
