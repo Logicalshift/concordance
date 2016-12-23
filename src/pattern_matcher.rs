@@ -44,7 +44,7 @@ pub trait PatternMatcher<InputSymbol, OutputSymbol> {
 ///
 /// Action to be taken after a matcher receives a symbol
 ///
-pub enum MatchAction<'a, OutputSymbol: 'static, State: ?Sized> {
+pub enum MatchAction<'a, OutputSymbol: 'static, State: Sized> {
     // State is also always: MatchingState<InputSymbol, OutputSymbol> (important to know that as its how More is used)
     //
     // However, rust complains that InputSymbol is unused if we declare it in MatchAction and that it is undeclared if we don't
@@ -62,7 +62,7 @@ pub enum MatchAction<'a, OutputSymbol: 'static, State: ?Sized> {
     More(State)
 }
 
-impl<'a, OutputSymbol: PartialEq+'static, State: ?Sized> MatchAction<'a, OutputSymbol, State> {
+impl<'a, OutputSymbol: PartialEq+'static, State: Sized> MatchAction<'a, OutputSymbol, State> {
     ///
     /// Returns true if this is an accepting state with the specified symbol
     ///
@@ -77,7 +77,7 @@ impl<'a, OutputSymbol: PartialEq+'static, State: ?Sized> MatchAction<'a, OutputS
 ///
 /// Represents a state during a pattern matching operation
 ///
-pub trait MatchingState<'a, InputSymbol, OutputSymbol> {
+pub trait MatchingState<'a, InputSymbol, OutputSymbol> : Sized {
     ///
     /// Matches the next symbol
     ///
