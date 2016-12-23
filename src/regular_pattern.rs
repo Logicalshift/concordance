@@ -432,14 +432,12 @@ mod test {
         assert!(pattern == Match(vec![0, 1, 2]));
     }
 
-    /*
     #[test]
     fn can_convert_array_to_pattern() {
-        let pattern = exactly([0, 1, 2]);
+        let pattern = [0, 1, 2].to_pattern();
 
         assert!(pattern == Match(vec![0, 1, 2]));
     }
-    */
 
     #[test]
     fn can_convert_string_to_pattern() {
