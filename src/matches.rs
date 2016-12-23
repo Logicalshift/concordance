@@ -115,8 +115,8 @@ fn matches_symbol_range<InputSymbol: Ord, OutputSymbol: 'static>(dfa: &SymbolRan
 ///
 /// ```
 /// # use concordance::*;
-/// matches(&vec![1,2,3,1,2,3], vec![1,2,3].repeat_forever(1)); // == Some(6)
-/// # assert!(matches(&vec![1,2,3,1,2,3], vec![1,2,3].repeat_forever(1)) == Some(6));
+/// matches(&vec![1,2,3,1,2,3], exactly(&vec![1,2,3]).repeat_forever(1)); // == Some(6)
+/// # assert!(matches(&vec![1,2,3,1,2,3], exactly(&vec![1,2,3]).repeat_forever(1)) == Some(6));
 /// ```
 ///
 pub fn matches<'a, Symbol, OutputSymbol, Prepare, Reader, Source>(source: Source, pattern: Prepare) -> Option<usize>

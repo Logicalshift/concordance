@@ -20,8 +20,8 @@
 //!
 //! ```
 //! # use concordance::*;
-//! let match_abcs      = "abc".prepare_to_match();
-//! let match_many_abcs = "abc".repeat_forever(1).prepare_to_match();
+//! let match_abcs      = exactly("abc").prepare_to_match();
+//! let match_many_abcs = exactly("abc").repeat_forever(1).prepare_to_match();
 //! 
 //! if matches_prepared("abcabc", &match_many_abcs).is_some() { /* ... */ }
 //! # assert!(matches_prepared("abcabc", &match_many_abcs).is_some());
