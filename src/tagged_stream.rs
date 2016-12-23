@@ -101,6 +101,58 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
         // Draining then inserting is inefficient compared to flat out replacing items :-/ This may be possible but the vec docs aren't very easy to read
         self.data.insert(range.start, tag_symbol);
     }
+
+    ///
+    /// Creates a tag symbol by tagging a particular range within this stream
+    ///
+    pub fn tag_range(&self, range: Range<usize>, tag: Tag) -> TagSymbol<Base, Tag> {
+        let tag_data = self.data[range].to_vec();
+
+        TagSymbol::Tagged(tag, TaggedStream { data: tag_data })
+    }
+
+    ///
+    /// Applies tags to the specified ranges in this stream
+    ///
+    /// The tag ranges must be in ascending order and must not overlap
+    ///
+    pub fn with_tags(&self, tags: &Vec<(Range<usize>, Tag)>) -> TaggedStream<Base, Tag> {
+        // The data that will make up the new stream
+        let mut new_stream = vec![];
+
+        // The last processed range (we haven't processed any range yet, so this starts at 0..0)
+        let mut last_range = 0..0;
+
+        // Build up the result from the tag list and the last range
+        for tag in tags {
+            // Fetch the information for this tag and check ordering
+            let &(ref next_range, ref next_tag) = tag;
+            let end                     = last_range.end;
+
+            if end > next_range.start {
+                panic!("Tags for with_tags must be sorted in order");
+            }
+
+            // Sometimes need to leave some data from this stream untagged
+            if end < next_range.start {
+                new_stream.extend(self.data[end..next_range.start].iter().cloned());
+            }
+
+            // Push the tag
+            new_stream.push(self.tag_range(next_range.clone(), next_tag.clone()));
+
+            // Update state
+            last_range = next_range.clone();
+        }
+
+        // Append anything left in the stream
+        if last_range.end < self.data.len() {
+            new_stream.extend(self.data[last_range.end..self.data.len()].iter().cloned());
+        }
+
+        // Final result
+        TaggedStream { data: new_stream }
+    }
 }
 
 impl<Base: Clone, Tag: Clone> Index<usize> for TaggedStream<Base, Tag> {
@@ -162,5 +214,143 @@ mod test {
         } else {
             assert!(false);
         }
+    }
+
+    #[test]
+    fn can_tag_everything_with_tags() {
+        #[derive(Clone, PartialEq, Eq, Copy)]
+        enum Tags {
+            Hello,
+            World
+        }
+
+        let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
+        let tagged = original.with_tags(&vec![(0..5, Tags::Hello), (5..10, Tags::World)]);
+
+        assert!(tagged.len() == 2);
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == Tags::Hello);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('H'));
+            assert!(stream[1] == TagSymbol::Untagged('e'));
+            assert!(stream[2] == TagSymbol::Untagged('l'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('o'));
+        } else {
+            assert!(false);
+        }
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[1] {
+            assert!(*tag == Tags::World);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('W'));
+            assert!(stream[1] == TagSymbol::Untagged('o'));
+            assert!(stream[2] == TagSymbol::Untagged('r'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('d'));
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn with_tags_preserves_middle() {
+        #[derive(Clone, PartialEq, Eq, Copy)]
+        enum Tags {
+            Hello,
+            World
+        }
+
+        let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
+        let tagged = original.with_tags(&vec![(0..4, Tags::Hello), (6..10, Tags::World)]);
+
+        assert!(tagged.len() == 4);
+        assert!(tagged[1] == TagSymbol::Untagged('o'));
+        assert!(tagged[2] == TagSymbol::Untagged('W'));
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == Tags::Hello);
+            assert!(stream.len() == 4);
+            assert!(stream[0] == TagSymbol::Untagged('H'));
+            assert!(stream[1] == TagSymbol::Untagged('e'));
+            assert!(stream[2] == TagSymbol::Untagged('l'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+        } else {
+            assert!(false);
+        }
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[3] {
+            assert!(*tag == Tags::World);
+            assert!(stream.len() == 4);
+            assert!(stream[0] == TagSymbol::Untagged('o'));
+            assert!(stream[1] == TagSymbol::Untagged('r'));
+            assert!(stream[2] == TagSymbol::Untagged('l'));
+            assert!(stream[3] == TagSymbol::Untagged('d'));
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn with_tags_preserves_end() {
+        #[derive(Clone, PartialEq, Eq, Copy)]
+        enum Tags {
+            Hello
+        }
+
+        let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
+        let tagged = original.with_tags(&vec![(0..5, Tags::Hello)]);
+
+        assert!(tagged.len() == 6);
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == Tags::Hello);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('H'));
+            assert!(stream[1] == TagSymbol::Untagged('e'));
+            assert!(stream[2] == TagSymbol::Untagged('l'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('o'));
+        } else {
+            assert!(false);
+        }
+
+        assert!(tagged[1] == TagSymbol::Untagged('W'));
+        assert!(tagged[2] == TagSymbol::Untagged('o'));
+        assert!(tagged[3] == TagSymbol::Untagged('r'));
+        assert!(tagged[4] == TagSymbol::Untagged('l'));
+        assert!(tagged[5] == TagSymbol::Untagged('d'));
+    }
+
+    #[test]
+    fn with_tags_preserves_start() {
+        #[derive(Clone, PartialEq, Eq, Copy)]
+        enum Tags {
+            World
+        }
+
+        let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
+        let tagged = original.with_tags(&vec![(5..10, Tags::World)]);
+
+        assert!(tagged.len() == 6);
+
+        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[5] {
+            assert!(*tag == Tags::World);
+            assert!(stream.len() == 5);
+            assert!(stream[0] == TagSymbol::Untagged('W'));
+            assert!(stream[1] == TagSymbol::Untagged('o'));
+            assert!(stream[2] == TagSymbol::Untagged('r'));
+            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[4] == TagSymbol::Untagged('d'));
+        } else {
+            assert!(false);
+        }
+
+        assert!(tagged[0] == TagSymbol::Untagged('H'));
+        assert!(tagged[1] == TagSymbol::Untagged('e'));
+        assert!(tagged[2] == TagSymbol::Untagged('l'));
+        assert!(tagged[3] == TagSymbol::Untagged('l'));
+        assert!(tagged[4] == TagSymbol::Untagged('o'));
     }
 }
