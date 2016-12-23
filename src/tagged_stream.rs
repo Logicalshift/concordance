@@ -47,7 +47,10 @@ use super::symbol_reader::*;
 ///
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum TagSymbol<Base: Clone, Tag: Clone> {
+    /// An untagged element in this stream
     Untagged(Base),
+
+    /// A tagged region of the stream
     Tagged(Tag, TaggedStream<Base, Tag>)
 }
 
