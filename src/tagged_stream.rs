@@ -184,6 +184,20 @@ impl<Base: Ord+Clone, Tag: Ord+Clone+'static> TaggedStream<Base, Tag> {
     }
 }
 
+impl<Base: Ord+Countable+Clone, Tag: Ord+Clone+'static> TaggedStream<Base, Tag> {
+    ///
+    /// Creates a tagged stream by tokenizing the contents of a symbol source
+    ///
+    pub fn from_tokenized_reader(reader: &mut SymbolReader<Base>, token_matcher: &SymbolRangeDfa<Base, Tag>) -> TaggedStream<Base, Tag> {
+        TaggedStream::from_reader(reader).tokenize(token_matcher, | symbol | {
+            match symbol {
+                Untagged(c)  => c,
+                Tagged(_, _) => panic!()
+            }
+        })
+    }
+}
+
 impl<Base: Clone+Ord, Tag: Clone+Ord> Index<usize> for TaggedStream<Base, Tag> {
     type Output = TagSymbol<Base, Tag>;
 
@@ -398,13 +412,66 @@ mod test {
 
         let dfa = token_matcher.prepare_to_match();
 
-        let original = TaggedStream::from_reader(&mut "12 345  56".read_symbols());
-        let tagged = original.tokenize(&dfa, | symbol: TagSymbol<char, TestToken> | {
+        let original    = TaggedStream::from_reader(&mut "12 345  56".read_symbols());
+        let tagged      = original.tokenize(&dfa, | symbol: TagSymbol<char, TestToken> | {
             match symbol {
                 Tagged(_, _) => ' ',
                 Untagged(c)  => c
             }
         });
+
+        assert!(tagged.len() == 5);
+
+        if let Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[1] {
+            assert!(*tag == TestToken::Whitespace);
+            assert!(stream.len() == 1);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[2] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 3);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[3] {
+            assert!(*tag == TestToken::Whitespace);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[4] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn can_create_directly_from_tokenizer() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Number,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Number);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(0), TestToken::Whitespace);
+
+        let dfa     = token_matcher.prepare_to_match();
+        let tagged  = TaggedStream::from_tokenized_reader(&mut "12 345  56".read_symbols(), &dfa);
 
         assert!(tagged.len() == 5);
 
