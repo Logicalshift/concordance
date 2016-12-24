@@ -166,7 +166,8 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     ///
     /// This takes a mapping function: the idea is that 
     ///
-    pub fn tokenize<DfaSymbol: Ord>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: Fn(TagSymbol<Base, Tag>) -> Option<DfaSymbol>) -> TaggedStream<Base, Tag> {
+    pub fn tokenize<DfaSymbol: Ord, MapFn>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: MapFn) -> TaggedStream<Base, Tag> 
+        where MapFn: Fn(TagSymbol<Base, Tag>) -> Option<DfaSymbol> {
         unimplemented!();
     }
 }
