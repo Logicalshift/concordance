@@ -30,7 +30,8 @@
 //!     Identifier
 //! };
 //!
-//! let simple_tagged : TaggedStream<char, SomeTag> = TaggedStream::from_reader(&mut "Hello, world".read_symbols());
+//! let simple_tagged = TaggedStream::from_reader(&mut "Hello, world".read_symbols());
+//! let with_tag      = simple_tagged.with_tags(vec![(0..5, SomeTag::Identifier)].iter().cloned());
 //! ```
 //!
 
