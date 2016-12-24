@@ -223,6 +223,31 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Read
     }
 }
 
+///
+/// When treated as an iterator, the tokenizer will try to tokenize the entire stream, skipping over characters that don't match.
+/// This differs from calling next_token(), where the symbols must be skipped manually.
+///
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> Iterator for Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
+    type Item = (Range<usize>, OutputSymbol);
+
+    #[inline]
+    fn next(&mut self) -> Option<(Range<usize>, OutputSymbol)> {
+        loop {
+            if let Some(next) = self.next_token() {
+                // Successfully matched a token
+                return Some(next);
+            } else {
+                // Stop if we reach the end of the reader, otherwise, try again with the next token
+                if self.at_end_of_reader() {
+                    return None;
+                } else {
+                    self.skip_input();
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::super::*;
@@ -329,6 +354,47 @@ mod test {
         assert!(tokenizer.next_token() == Some((10..11, TestToken::Whitespace)));
         assert!(tokenizer.at_end_of_reader());
         assert!(tokenizer.next_token() == None);
+    }
+
+    #[test]
+    fn can_match_number_stream_iterator() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(1), TestToken::Whitespace);
+
+        let mut tokenizer = Tokenizer::new("12 390  32 ".read_symbols(), &token_matcher);
+
+        assert!(tokenizer.next() == Some((0..2, TestToken::Digit)));
+        assert!(tokenizer.next() == Some((2..3, TestToken::Whitespace)));
+        assert!(tokenizer.next() == Some((3..6, TestToken::Digit)));
+        assert!(tokenizer.next() == Some((6..8, TestToken::Whitespace)));
+        assert!(tokenizer.next() == Some((8..10, TestToken::Digit)));
+        assert!(tokenizer.next() == Some((10..11, TestToken::Whitespace)));
+        assert!(tokenizer.next() == None);
+    }
+
+    #[test]
+    fn can_match_number_stream_iterator_with_skipping() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
+
+        let mut tokenizer = Tokenizer::new("12 390  32 ".read_symbols(), &token_matcher);
+
+        assert!(tokenizer.next() == Some((0..2, TestToken::Digit)));
+        assert!(tokenizer.next() == Some((3..6, TestToken::Digit)));
+        assert!(tokenizer.next() == Some((8..10, TestToken::Digit)));
+        assert!(tokenizer.next() == None);
     }
 
     #[test]
