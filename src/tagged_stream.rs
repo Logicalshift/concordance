@@ -60,6 +60,8 @@ pub enum TagSymbol<Base: Clone+Ord, Tag: Clone+Ord> {
     Tagged(Tag, TaggedStream<Base, Tag>)
 }
 
+use TagSymbol::*;
+
 ///
 /// Represents a stream of tagged symbols
 ///
@@ -78,7 +80,7 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
         let mut symbols = vec![];
 
         while let Some(next_symbol) = reader.next_symbol() {
-            symbols.push(TagSymbol::Untagged(next_symbol));
+            symbols.push(Untagged(next_symbol));
         }
 
         // Generate a simple tagged stream from the result
@@ -98,7 +100,7 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     pub fn tag(&mut self, tag: Tag, range: Range<usize>) {
         // Create a tag to replace the range
         let replaced_symbols    = self.data[range.clone()].to_vec();
-        let tag_symbol          = TagSymbol::Tagged(tag, TaggedStream { data: replaced_symbols });
+        let tag_symbol          = Tagged(tag, TaggedStream { data: replaced_symbols });
 
         // Draining seems to be for reading a range but does double duty for deleting a range?
         // I don't think rust has a way to replace a range in a vector, or at least not one that's easy to find in the docs.
@@ -114,7 +116,7 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     pub fn tag_range(&self, range: Range<usize>, tag: Tag) -> TagSymbol<Base, Tag> {
         let tag_data = self.data[range].to_vec();
 
-        TagSymbol::Tagged(tag, TaggedStream { data: tag_data })
+        Tagged(tag, TaggedStream { data: tag_data })
     }
 
     ///
@@ -194,6 +196,7 @@ impl<'a, Base: Clone+Ord, Tag: Clone+Ord> SymbolSource<'a, TagSymbol<Base, Tag>>
 #[cfg(test)]
 mod test {
     use super::super::*;
+    use super::super::tagged_stream::TagSymbol::*;
 
     #[test]
     fn can_tag_range() {
@@ -210,26 +213,26 @@ mod test {
 
         assert!(tagged.len() == 2);
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+        if let Tagged(ref tag, ref stream) = tagged[0] {
             assert!(*tag == Tags::Hello);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('H'));
-            assert!(stream[1] == TagSymbol::Untagged('e'));
-            assert!(stream[2] == TagSymbol::Untagged('l'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('o'));
+            assert!(stream[0] == Untagged('H'));
+            assert!(stream[1] == Untagged('e'));
+            assert!(stream[2] == Untagged('l'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('o'));
         } else {
             assert!(false);
         }
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[1] {
+        if let Tagged(ref tag, ref stream) = tagged[1] {
             assert!(*tag == Tags::World);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('W'));
-            assert!(stream[1] == TagSymbol::Untagged('o'));
-            assert!(stream[2] == TagSymbol::Untagged('r'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('d'));
+            assert!(stream[0] == Untagged('W'));
+            assert!(stream[1] == Untagged('o'));
+            assert!(stream[2] == Untagged('r'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('d'));
         } else {
             assert!(false);
         }
@@ -248,26 +251,26 @@ mod test {
 
         assert!(tagged.len() == 2);
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+        if let Tagged(ref tag, ref stream) = tagged[0] {
             assert!(*tag == Tags::Hello);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('H'));
-            assert!(stream[1] == TagSymbol::Untagged('e'));
-            assert!(stream[2] == TagSymbol::Untagged('l'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('o'));
+            assert!(stream[0] == Untagged('H'));
+            assert!(stream[1] == Untagged('e'));
+            assert!(stream[2] == Untagged('l'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('o'));
         } else {
             assert!(false);
         }
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[1] {
+        if let Tagged(ref tag, ref stream) = tagged[1] {
             assert!(*tag == Tags::World);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('W'));
-            assert!(stream[1] == TagSymbol::Untagged('o'));
-            assert!(stream[2] == TagSymbol::Untagged('r'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('d'));
+            assert!(stream[0] == Untagged('W'));
+            assert!(stream[1] == Untagged('o'));
+            assert!(stream[2] == Untagged('r'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('d'));
         } else {
             assert!(false);
         }
@@ -285,27 +288,27 @@ mod test {
         let tagged = original.with_tags(vec![(0..4, Tags::Hello), (6..10, Tags::World)].iter().cloned());
 
         assert!(tagged.len() == 4);
-        assert!(tagged[1] == TagSymbol::Untagged('o'));
-        assert!(tagged[2] == TagSymbol::Untagged('W'));
+        assert!(tagged[1] == Untagged('o'));
+        assert!(tagged[2] == Untagged('W'));
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+        if let Tagged(ref tag, ref stream) = tagged[0] {
             assert!(*tag == Tags::Hello);
             assert!(stream.len() == 4);
-            assert!(stream[0] == TagSymbol::Untagged('H'));
-            assert!(stream[1] == TagSymbol::Untagged('e'));
-            assert!(stream[2] == TagSymbol::Untagged('l'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
+            assert!(stream[0] == Untagged('H'));
+            assert!(stream[1] == Untagged('e'));
+            assert!(stream[2] == Untagged('l'));
+            assert!(stream[3] == Untagged('l'));
         } else {
             assert!(false);
         }
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[3] {
+        if let Tagged(ref tag, ref stream) = tagged[3] {
             assert!(*tag == Tags::World);
             assert!(stream.len() == 4);
-            assert!(stream[0] == TagSymbol::Untagged('o'));
-            assert!(stream[1] == TagSymbol::Untagged('r'));
-            assert!(stream[2] == TagSymbol::Untagged('l'));
-            assert!(stream[3] == TagSymbol::Untagged('d'));
+            assert!(stream[0] == Untagged('o'));
+            assert!(stream[1] == Untagged('r'));
+            assert!(stream[2] == Untagged('l'));
+            assert!(stream[3] == Untagged('d'));
         } else {
             assert!(false);
         }
@@ -323,23 +326,23 @@ mod test {
 
         assert!(tagged.len() == 6);
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[0] {
+        if let Tagged(ref tag, ref stream) = tagged[0] {
             assert!(*tag == Tags::Hello);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('H'));
-            assert!(stream[1] == TagSymbol::Untagged('e'));
-            assert!(stream[2] == TagSymbol::Untagged('l'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('o'));
+            assert!(stream[0] == Untagged('H'));
+            assert!(stream[1] == Untagged('e'));
+            assert!(stream[2] == Untagged('l'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('o'));
         } else {
             assert!(false);
         }
 
-        assert!(tagged[1] == TagSymbol::Untagged('W'));
-        assert!(tagged[2] == TagSymbol::Untagged('o'));
-        assert!(tagged[3] == TagSymbol::Untagged('r'));
-        assert!(tagged[4] == TagSymbol::Untagged('l'));
-        assert!(tagged[5] == TagSymbol::Untagged('d'));
+        assert!(tagged[1] == Untagged('W'));
+        assert!(tagged[2] == Untagged('o'));
+        assert!(tagged[3] == Untagged('r'));
+        assert!(tagged[4] == Untagged('l'));
+        assert!(tagged[5] == Untagged('d'));
     }
 
     #[test]
@@ -354,22 +357,22 @@ mod test {
 
         assert!(tagged.len() == 6);
 
-        if let TagSymbol::Tagged(ref tag, ref stream) = tagged[5] {
+        if let Tagged(ref tag, ref stream) = tagged[5] {
             assert!(*tag == Tags::World);
             assert!(stream.len() == 5);
-            assert!(stream[0] == TagSymbol::Untagged('W'));
-            assert!(stream[1] == TagSymbol::Untagged('o'));
-            assert!(stream[2] == TagSymbol::Untagged('r'));
-            assert!(stream[3] == TagSymbol::Untagged('l'));
-            assert!(stream[4] == TagSymbol::Untagged('d'));
+            assert!(stream[0] == Untagged('W'));
+            assert!(stream[1] == Untagged('o'));
+            assert!(stream[2] == Untagged('r'));
+            assert!(stream[3] == Untagged('l'));
+            assert!(stream[4] == Untagged('d'));
         } else {
             assert!(false);
         }
 
-        assert!(tagged[0] == TagSymbol::Untagged('H'));
-        assert!(tagged[1] == TagSymbol::Untagged('e'));
-        assert!(tagged[2] == TagSymbol::Untagged('l'));
-        assert!(tagged[3] == TagSymbol::Untagged('l'));
-        assert!(tagged[4] == TagSymbol::Untagged('o'));
+        assert!(tagged[0] == Untagged('H'));
+        assert!(tagged[1] == Untagged('e'));
+        assert!(tagged[2] == Untagged('l'));
+        assert!(tagged[3] == Untagged('l'));
+        assert!(tagged[4] == Untagged('o'));
     }
 }
