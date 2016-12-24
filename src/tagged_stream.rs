@@ -383,4 +383,64 @@ mod test {
         assert!(tagged[3] == Untagged('l'));
         assert!(tagged[4] == Untagged('o'));
     }
+
+    #[test]
+    fn can_tag_with_tokenizer() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Number,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(0), TestToken::Number);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(0), TestToken::Whitespace);
+
+        let dfa = token_matcher.prepare_to_match();
+
+        let original = TaggedStream::from_reader(&mut "12 345  56".read_symbols());
+        let tagged = original.tokenize(&dfa, | symbol: TagSymbol<char, TestToken> | {
+            match symbol {
+                Tagged(_, _) => ' ',
+                Untagged(c)  => c
+            }
+        });
+
+        assert!(tagged.len() == 5);
+
+        if let Tagged(ref tag, ref stream) = tagged[0] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[1] {
+            assert!(*tag == TestToken::Whitespace);
+            assert!(stream.len() == 1);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[2] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 3);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[3] {
+            assert!(*tag == TestToken::Whitespace);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+
+        if let Tagged(ref tag, ref stream) = tagged[4] {
+            assert!(*tag == TestToken::Number);
+            assert!(stream.len() == 2);
+        } else {
+            assert!(false);
+        }
+    }
 }
