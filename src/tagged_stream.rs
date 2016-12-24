@@ -164,10 +164,12 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     ///
     /// Runs the current values of this tagged stream through a tokenizer and tags anything it matches
     ///
-    /// This takes a mapping function: the idea is that 
+    /// This takes a mapping function to describe how symbols in this stream map to symbols in the DFA. Note that every symbol 
+    /// (tagged or untagged) must be mapped to a DFA symbol, so if only tagged or untagged symbols are being used it's necessary
+    /// to decide how the other symbols are mapped (eg, to an unused symbol)
     ///
     pub fn tokenize<DfaSymbol: Ord, MapFn>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: MapFn) -> TaggedStream<Base, Tag> 
-        where MapFn: Fn(TagSymbol<Base, Tag>) -> Option<DfaSymbol> {
+        where MapFn: Fn(TagSymbol<Base, Tag>) -> DfaSymbol {
         unimplemented!();
     }
 }
