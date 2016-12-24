@@ -42,6 +42,7 @@ use std::slice::Iter;
 use std::ops::Index;
 use std::ops::Range;
 
+use super::countable::*;
 use super::symbol_reader::*;
 use super::tokenizer::*;
 use super::symbol_range_dfa::*;
@@ -71,7 +72,7 @@ pub struct TaggedStream<Base: Clone+Ord, Tag: Clone+Ord> {
     data: Vec<TagSymbol<Base, Tag>>
 }
 
-impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
+impl<Base: Ord+Clone, Tag: Ord+Clone+'static> TaggedStream<Base, Tag> {
     ///
     /// Creates a basic tagged stream from a source of the base symbol
     ///
@@ -170,9 +171,16 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     /// (tagged or untagged) must be mapped to a DFA symbol, so if only tagged or untagged symbols are being used it's necessary
     /// to decide how the other symbols are mapped (eg, to an unused symbol)
     ///
-    pub fn tokenize<DfaSymbol: Ord, MapFn>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: MapFn) -> TaggedStream<Base, Tag> 
-        where MapFn: Fn(TagSymbol<Base, Tag>) -> DfaSymbol {
-        unimplemented!();
+    pub fn tokenize<DfaSymbol: Ord+Countable+Clone, MapFn>(&self, token_matcher: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: MapFn) -> TaggedStream<Base, Tag> 
+        where MapFn: FnMut(TagSymbol<Base, Tag>) -> DfaSymbol {
+        // Generate a symbol reader with the mapping function
+        let reader = self.data.read_symbols().map_symbols(map_symbol);
+
+        // Tokenize it
+        let tokenizer = Tokenizer::new_prepared(reader, token_matcher);
+
+        // Use the tokenizer to generate the result
+        self.with_tags(tokenizer)
     }
 }
 
