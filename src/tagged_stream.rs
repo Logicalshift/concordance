@@ -116,7 +116,8 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
     ///
     /// The tag ranges must be in ascending order and must not overlap
     ///
-    pub fn with_tags(&self, tags: &Vec<(Range<usize>, Tag)>) -> TaggedStream<Base, Tag> {
+    pub fn with_tags<I>(&self, tags: I) -> TaggedStream<Base, Tag> 
+        where I : Iterator<Item=(Range<usize>, Tag)> {
         // The data that will make up the new stream
         let mut new_stream = vec![];
 
@@ -126,7 +127,7 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
         // Build up the result from the tag list and the last range
         for tag in tags {
             // Fetch the information for this tag and check ordering
-            let &(ref next_range, ref next_tag) = tag;
+            let (next_range, next_tag)  = tag;
             let end                     = last_range.end;
 
             if end > next_range.start {
@@ -139,10 +140,10 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
             }
 
             // Push the tag
-            new_stream.push(self.tag_range(next_range.clone(), next_tag.clone()));
+            new_stream.push(self.tag_range(next_range.clone(), next_tag));
 
             // Update state
-            last_range = next_range.clone();
+            last_range = next_range;
         }
 
         // Append anything left in the stream
@@ -225,7 +226,7 @@ mod test {
         }
 
         let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
-        let tagged = original.with_tags(&vec![(0..5, Tags::Hello), (5..10, Tags::World)]);
+        let tagged = original.with_tags(vec![(0..5, Tags::Hello), (5..10, Tags::World)].iter().cloned());
 
         assert!(tagged.len() == 2);
 
@@ -263,7 +264,7 @@ mod test {
         }
 
         let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
-        let tagged = original.with_tags(&vec![(0..4, Tags::Hello), (6..10, Tags::World)]);
+        let tagged = original.with_tags(vec![(0..4, Tags::Hello), (6..10, Tags::World)].iter().cloned());
 
         assert!(tagged.len() == 4);
         assert!(tagged[1] == TagSymbol::Untagged('o'));
@@ -300,7 +301,7 @@ mod test {
         }
 
         let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
-        let tagged = original.with_tags(&vec![(0..5, Tags::Hello)]);
+        let tagged = original.with_tags(vec![(0..5, Tags::Hello)].iter().cloned());
 
         assert!(tagged.len() == 6);
 
@@ -331,7 +332,7 @@ mod test {
         }
 
         let original: TaggedStream<char, Tags> = TaggedStream::from_reader(&mut "HelloWorld".read_symbols());
-        let tagged = original.with_tags(&vec![(5..10, Tags::World)]);
+        let tagged = original.with_tags(vec![(5..10, Tags::World)].iter().cloned());
 
         assert!(tagged.len() == 6);
 
