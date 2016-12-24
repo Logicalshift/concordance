@@ -21,6 +21,8 @@
 //! be produced instead of '1' in the event of a clash)
 //!
 
+use std::ops::Range;
+
 use super::countable::*;
 use super::symbol_range::*;
 use super::regular_pattern::*;
@@ -121,7 +123,7 @@ pub struct Tokenizer<'a, InputSymbol: Clone+Ord+Countable+'a, OutputSymbol: Clon
     tape: Tape<InputSymbol, Reader>,
 }
 
-impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: SymbolReader<InputSymbol>> Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
     ///
     /// Creates a new tokenizer from a pattern (usually a TokenMatcher)
     ///
@@ -158,10 +160,14 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord, Reader: Symb
     pub fn at_end_of_reader(&self) -> bool {
         self.tape.at_end_of_reader()
     }
-}
 
-impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
-    fn next_symbol(&mut self) -> Option<OutputSymbol> {
+    ///
+    /// Reads the next token from the tokenizer, if there is one, returning its position and the symbol that was matched
+    ///
+    /// If no symbol matches (or the only match is a zero-length string), this returns None. `skip_input` can be called to try
+    /// a new match at the next symbol. 
+    ///
+    pub fn next_token(&mut self) -> Option<(Range<usize>, OutputSymbol)> {
         // Start of the next symbol
         let start_pos = self.tape.get_source_position();
 
@@ -179,10 +185,11 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Read
                     self.tape.cut();
 
                     // Result is the oputput symbol
-                    Some(outputsymbol.clone())
+                    let match_range = start_pos..(start_pos+length);
+                    Some((match_range, outputsymbol.clone()))
                 } else {
                     // Zero-length match
-                    // If we accepted matches of length 0 we'd get an infinite stream when we hit a symbol that doesn't match
+                    // If we accepted matches of length 0 we'd get an infinite stream when we hit a symbol that doesn't match, so for these we just skip a single symbol
                     self.tape.rewind(end_pos-start_pos);
 
                     // Return no match
@@ -199,8 +206,19 @@ impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Read
             },
 
             _ => {
-                panic!("Unexpected output state of ");
+                panic!("Unexpected output state from state machine");
             }
+        }
+    }
+}
+
+impl<'a, InputSymbol: Clone+Ord+Countable, OutputSymbol: Clone+Ord+'static, Reader: SymbolReader<InputSymbol>> SymbolReader<OutputSymbol> for Tokenizer<'a, InputSymbol, OutputSymbol, Reader> {
+    #[inline]
+    fn next_symbol(&mut self) -> Option<OutputSymbol> {
+        if let Some((_, symbol)) = self.next_token() {
+            Some(symbol)
+        } else {
+            None
         }
     }
 }
@@ -284,6 +302,37 @@ mod test {
 
     #[test]
     fn can_match_number_stream() {
+        #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+        enum TestToken {
+            Digit,
+            Whitespace
+        }
+
+        let mut token_matcher = TokenMatcher::new();
+        token_matcher.add_pattern(MatchRange('0', '9').repeat_forever(1), TestToken::Digit);
+        token_matcher.add_pattern(exactly(" ").repeat_forever(1), TestToken::Whitespace);
+
+        let mut tokenizer = Tokenizer::new("12 390  32 ".read_symbols(), &token_matcher);
+
+        assert!(tokenizer.next_token() == Some((0..2, TestToken::Digit)));
+        assert!(tokenizer.get_source_position() == 2);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_token() == Some((2..3, TestToken::Whitespace)));
+        assert!(tokenizer.get_source_position() == 3);
+        assert!(tokenizer.next_token() == Some((3..6, TestToken::Digit)));
+        assert!(tokenizer.get_source_position() == 6);
+        assert!(tokenizer.next_token() == Some((6..8, TestToken::Whitespace)));
+        assert!(tokenizer.get_source_position() == 8);
+        assert!(tokenizer.next_token() == Some((8..10, TestToken::Digit)));
+        assert!(tokenizer.get_source_position() == 10);
+        assert!(!tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_token() == Some((10..11, TestToken::Whitespace)));
+        assert!(tokenizer.at_end_of_reader());
+        assert!(tokenizer.next_token() == None);
+    }
+
+    #[test]
+    fn can_match_number_stream_as_stream() {
         #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
         enum TestToken {
             Digit,
