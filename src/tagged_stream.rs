@@ -35,6 +35,9 @@
 //! ```
 //!
 
+// TODO: a possibly better way to design this would be to make it so that there's an underlying stream we read from when generating tag 
+// symbols so that we don't need to store the contents of the stream in memory
+
 use std::slice::Iter;
 use std::ops::Index;
 use std::ops::Range;
@@ -161,7 +164,9 @@ impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     ///
     /// Runs the current values of this tagged stream through a tokenizer and tags anything it matches
     ///
-    pub fn tokenize<DfaSymbol: Ord>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>) -> TaggedStream<Base, Tag> {
+    /// This takes a mapping function: the idea is that 
+    ///
+    pub fn tokenize<DfaSymbol: Ord>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>, map_symbol: Fn(TagSymbol<Base, Tag>) -> Option<DfaSymbol>) -> TaggedStream<Base, Tag> {
         unimplemented!();
     }
 }
