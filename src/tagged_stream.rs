@@ -40,6 +40,8 @@ use std::ops::Index;
 use std::ops::Range;
 
 use super::symbol_reader::*;
+use super::tokenizer::*;
+use super::symbol_range_dfa::*;
 
 ///
 /// Represents a symbol in a tagged stream.
@@ -47,7 +49,7 @@ use super::symbol_reader::*;
 /// A symbol can either be a sequence of untagged base symbols, or it can be a tag (which itself can contain any number of tagged symbol)
 ///
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum TagSymbol<Base: Clone, Tag: Clone> {
+pub enum TagSymbol<Base: Clone+Ord, Tag: Clone+Ord> {
     /// An untagged element in this stream
     Untagged(Base),
 
@@ -59,12 +61,12 @@ pub enum TagSymbol<Base: Clone, Tag: Clone> {
 /// Represents a stream of tagged symbols
 ///
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct TaggedStream<Base: Clone, Tag: Clone> {
+pub struct TaggedStream<Base: Clone+Ord, Tag: Clone+Ord> {
     /// The data in this stream
     data: Vec<TagSymbol<Base, Tag>>
 }
 
-impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
+impl<Base: Ord+Clone, Tag: Ord+Clone> TaggedStream<Base, Tag> {
     ///
     /// Creates a basic tagged stream from a source of the base symbol
     ///
@@ -155,9 +157,16 @@ impl<Base: Clone, Tag: Clone> TaggedStream<Base, Tag> {
         // Final result
         TaggedStream { data: new_stream }
     }
+
+    ///
+    /// Runs the current values of this tagged stream through a tokenizer and tags anything it matches
+    ///
+    pub fn tokenize<DfaSymbol: Ord>(&self, dfa: &SymbolRangeDfa<DfaSymbol, Tag>) -> TaggedStream<Base, Tag> {
+        unimplemented!();
+    }
 }
 
-impl<Base: Clone, Tag: Clone> Index<usize> for TaggedStream<Base, Tag> {
+impl<Base: Clone+Ord, Tag: Clone+Ord> Index<usize> for TaggedStream<Base, Tag> {
     type Output = TagSymbol<Base, Tag>;
 
     fn index(&self, index: usize) -> &TagSymbol<Base, Tag> {
@@ -165,7 +174,7 @@ impl<Base: Clone, Tag: Clone> Index<usize> for TaggedStream<Base, Tag> {
     }
 }
 
-impl<'a, Base: Clone, Tag: Clone> SymbolSource<'a, TagSymbol<Base, Tag>> for &'a TaggedStream<Base, Tag> {
+impl<'a, Base: Clone+Ord, Tag: Clone+Ord> SymbolSource<'a, TagSymbol<Base, Tag>> for &'a TaggedStream<Base, Tag> {
     type SymbolReader = Iter<'a, TagSymbol<Base, Tag>>;
 
     /// Returns a new object that can read the symbols from this one
@@ -180,7 +189,7 @@ mod test {
 
     #[test]
     fn can_tag_range() {
-        #[derive(Clone, PartialEq, Eq, Copy)]
+        #[derive(Clone, PartialEq, Eq, Copy, PartialOrd, Ord)]
         enum Tags {
             Hello,
             World
@@ -220,7 +229,7 @@ mod test {
 
     #[test]
     fn can_tag_everything_with_tags() {
-        #[derive(Clone, PartialEq, Eq, Copy)]
+        #[derive(Clone, PartialEq, Eq, Copy, PartialOrd, Ord)]
         enum Tags {
             Hello,
             World
@@ -258,7 +267,7 @@ mod test {
 
     #[test]
     fn with_tags_preserves_middle() {
-        #[derive(Clone, PartialEq, Eq, Copy)]
+        #[derive(Clone, PartialEq, Eq, Copy, PartialOrd, Ord)]
         enum Tags {
             Hello,
             World
@@ -296,7 +305,7 @@ mod test {
 
     #[test]
     fn with_tags_preserves_end() {
-        #[derive(Clone, PartialEq, Eq, Copy)]
+        #[derive(Clone, PartialEq, Eq, Copy, PartialOrd, Ord)]
         enum Tags {
             Hello
         }
@@ -327,7 +336,7 @@ mod test {
 
     #[test]
     fn with_tags_preserves_start() {
-        #[derive(Clone, PartialEq, Eq, Copy)]
+        #[derive(Clone, PartialEq, Eq, Copy, PartialOrd, Ord)]
         enum Tags {
             World
         }

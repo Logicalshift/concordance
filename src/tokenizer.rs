@@ -91,8 +91,8 @@ for &'a TokenMatcher<InputSymbol, OutputSymbol> {
 ///
 /// Thing that can be a reference or the actual thing
 ///
-/// An elegant way of dealing with the 'sometimes we store a reference, but sometimes we also need the actual thing' problem
-/// that we have here would be for rust to support self-references in structures (or perhaps some other way - via RefCell or Box
+/// A way of dealing with the 'sometimes we store a reference, but sometimes we also need the actual thing' problem that
+/// we have here would be for rust to support self-references in structures (or perhaps some other way - via RefCell or Box
 /// perhaps - not possible in any obvious way at present due to borrowing order problems).
 ///
 enum ReferenceOrOwned<'a, Thing: 'a> {
