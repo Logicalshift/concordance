@@ -18,6 +18,9 @@
 //! A library for working with deterministic and non-deterministic finite-state automata.
 //!
 
+#[macro_use] extern crate serde;
+#[macro_use] extern crate serde_derive;
+
 pub use self::countable::*;
 pub use self::symbol_range::*;
 pub use self::symbol_reader::*;

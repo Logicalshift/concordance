@@ -30,7 +30,7 @@ use std::cmp::*;
 ///
 /// Represents a range of symbols
 ///
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct SymbolRange<Symbol: Ord> {
     ///
     /// Lowest symbol in the range
