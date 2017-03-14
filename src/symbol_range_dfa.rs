@@ -1,5 +1,5 @@
 //
-//   Copyright 2016 Andrew Hunter
+//   Copyright 2016, 2017 Andrew Hunter
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 //!
 //! A DFA that matches transitions against symbol ranges.
 //!
+
+use std::mem::*;
 
 use super::dfa_builder::*;
 use super::pattern_matcher::*;
@@ -153,6 +155,18 @@ impl<InputSymbol: Ord, OutputSymbol> SymbolRangeDfa<InputSymbol, OutputSymbol> {
         } else {
             More(SymbolRangeState { state: 0, count: 0, accept: None, state_machine: self })
         }
+    }
+
+    ///
+    /// Returns a description of this DFA
+    ///
+    pub fn description(&self) -> String {
+        let state_size          = size_of::<usize>() * self.states.len();
+        let transitions_size    = size_of::<(SymbolRange<InputSymbol>, StateId)>() * self.transitions.len();
+        let accept_size         = size_of::<Option<OutputSymbol>>() * self.accept.len();
+        let total_size          = state_size + transitions_size + accept_size;
+
+        format!("SymbolRangeDfa: {} states, {} total transitions. {} bytes", self.states.len(), self.transitions.len(), total_size)
     }
 }
 
