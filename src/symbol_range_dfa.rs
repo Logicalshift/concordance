@@ -20,6 +20,7 @@
 
 use std::mem::*;
 
+use super::countable::*;
 use super::dfa_builder::*;
 use super::pattern_matcher::*;
 use super::symbol_range::*;
@@ -49,20 +50,40 @@ pub struct SymbolRangeDfa<InputSymbol: Ord, OutputSymbol> {
 ///
 /// DFA builder that creates RangeDfas
 ///
-pub struct SymbolRangeDfaBuilder<InputSymbol: Ord, OutputSymbol> {
+pub struct SymbolRangeDfaBuilder<InputSymbol: Ord+Countable, OutputSymbol> {
     states: Vec<usize>,
     transitions: Vec<(SymbolRange<InputSymbol>, StateId)>,
     accept: Vec<Option<OutputSymbol>>
 }
 
-impl<InputSymbol: Ord, OutputSymbol> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord+Countable, OutputSymbol> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
     pub fn new() -> SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
         SymbolRangeDfaBuilder { states: vec![], transitions: vec![], accept: vec![] }
     }
 }
 
-impl<InputSymbol: Ord, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>, OutputSymbol, SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
+impl<InputSymbol: Ord+Countable+Clone, OutputSymbol> DfaBuilder<SymbolRange<InputSymbol>, OutputSymbol, SymbolRangeDfa<InputSymbol, OutputSymbol>> for SymbolRangeDfaBuilder<InputSymbol, OutputSymbol> {
     fn start_state(&mut self) {
+        // Join any adjoining transitions
+        if let Some(start_index) = self.states.last() {
+            let mut index = start_index+1;
+
+            while index < self.transitions.len() {
+                let (prev_symbols, prev_state) = self.transitions[index-1].clone();
+                let (next_symbols, next_state) = self.transitions[index].clone();
+
+                if prev_state == next_state && prev_symbols.highest.next() == next_symbols.lowest {
+                    // The previous transition and the next transition can be merged
+                    self.transitions[index-1] = (SymbolRange { lowest: prev_symbols.lowest, highest: next_symbols.highest }, prev_state);
+
+                    self.transitions.remove(index);
+                    index -= 1;                    
+                }
+
+                index += 1;
+            }
+        }
+
         // Begin the next state
         self.states.push(self.transitions.len());
         self.accept.push(None);
