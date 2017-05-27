@@ -1,9 +1,9 @@
 [package]
 name    = "concordance"
-version = "0.2.0"
+version = "0.2.1"
 license = "Apache"
 authors = ["Andrew Hunter <andrew@logicalshift.co.uk>"]
 
 [dependencies]
-serde           = "0.9"
-serde_derive    = "0.9"
+serde           = "1.0"
+serde_derive    = "1.0"
